@@ -44,7 +44,10 @@
                     Login
                 </button>
             </form>
+<<<<<<< HEAD
             <small class = "d-block text-center mt-3">Not Registered? <a href="/register">Register Now!</a></small>
+=======
+>>>>>>> 5e72e353cbdc1c231dc14cc870b4f7596b7ae72b
 
             <!-- Extra Links -->
             {{-- <div class="mt-6 text-center">
@@ -56,4 +59,8 @@
     </div>
 
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> 5e72e353cbdc1c231dc14cc870b4f7596b7ae72b

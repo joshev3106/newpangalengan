@@ -14,9 +14,14 @@ Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
 
 
 Route::get('/admin/login', [AdminController::class, 'loginAdmin'])->name('admin.login');
+<<<<<<< HEAD
 Route::post('/user/login', [AdminController::class, 'login'])->name('admin.login');
 Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
 
 Route ::get('tos', function () {
     return view('tos');
 });
+=======
+Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login');
+Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+>>>>>>> 5e72e353cbdc1c231dc14cc870b4f7596b7ae72b
