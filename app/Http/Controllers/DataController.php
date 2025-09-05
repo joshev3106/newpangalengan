@@ -29,8 +29,3 @@ class DataController extends Controller
     public function laporan() {
         return view('laporan');
     }
-<<<<<<< HEAD
-}
-=======
-}
->>>>>>> 5e72e353cbdc1c231dc14cc870b4f7596b7ae72b
