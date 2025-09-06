@@ -1,10 +1,9 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pangalengan - Pemetaan</title>
+    <title>Pemetaan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     @vite('resources/css/app.css')
 </head>
@@ -267,4 +266,4 @@
         <h1 class="h-[2000px]">Hai, ini peta</h1>
     @endif
 </x-layout>
->>>>>>> 5e72e353cbdc1c231dc14cc870b4f7596b7ae72b
+
