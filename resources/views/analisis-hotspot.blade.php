@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisis Hotspot - Dashboard Pangalengan</title>
+    <title>Analisis Hotspot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
