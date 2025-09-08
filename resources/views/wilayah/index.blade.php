@@ -97,7 +97,7 @@
                                         {{ number_format($rate,1) }}%
                                     </span>
                                 </td>
-                                <td class="px-4 py-3">{{ $r->faskes ?: '—' }}</td>
+                                <td class="px-4 py-3">{{ $r->faskes_nama ?: '—' }}</td>
                                 <td class="px-4 py-3">{{ $r->cakupan !== null ? $r->cakupan.'%' : '—' }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex gap-2">
@@ -141,9 +141,22 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-1">Faskes Terdekat</label>
-                        <input type="text" name="faskes" x-model="form.faskes"
-                               class="w-full rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                      <label class="block text-sm font-medium mb-1">Puskesmas</label>
+                      <select name="puskesmas_id" x-model="form.puskesmas_id"
+                              class="w-full rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">— Pilih puskesmas —</option>
+                        @foreach ($puskesmas as $pk)
+                          <option value="{{ $pk->id }}">{{ $pk->nama }}</option>
+                        @endforeach
+                      </select>
+                      <p class="mt-1 text-xs text-gray-500">Kosongkan jika ingin mengetik manual di bawah.</p>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Faskes (ketik manual, opsional)</label>
+                      <input type="text" name="faskes" x-model="form.faskes"
+                             placeholder="Contoh: Puskesmas Pangalengan"
+                             class="w-full rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                     </div>
 
                     <div>
@@ -165,34 +178,55 @@
     </div>
 
     @push('scripts')
-    <script>
-    function wilayahPage() {
-        return {
-            q: '', sev: '',
-            modalOpen: false,
-            form: { desa: '', faskes: '', cakupan: null },
-
-            openEdit(desa, faskes, cakupan) {
-                this.form.desa = desa;
-                this.form.faskes = faskes || '';
-                this.form.cakupan = cakupan;
-                this.modalOpen = true;
+        <script>
+        function wilayahPage() {
+          return {
+            q:'', sev:'',
+            modalOpen:false,
+            form:{ desa:'', puskesmas_id:'', faskes:'', cakupan:null },
+        
+            openEdit(desa, faskesNama, cakupan) {
+              this.form.desa = desa;
+              this.form.cakupan = cakupan;
+            
+              // reset
+              this.form.puskesmas_id = '';
+              this.form.faskes = faskesNama || '';
+            
+              // Auto-suggest: jika belum ada faskes & belum ada id, coba cari option yang cocok dgn nama desa
+              if (!this.form.faskes) {
+                const sel = document.querySelector('select[name="puskesmas_id"]');
+                if (sel) {
+                  const needle = desa.toLowerCase();
+                  for (const opt of sel.options) {
+                    if (opt.value && opt.text.toLowerCase().includes(needle)) {
+                      this.form.puskesmas_id = opt.value;
+                      break;
+                    }
+                  }
+                  // Kalau belum ketemu, fallback default "Puskesmas {Desa}"
+                  if (!this.form.puskesmas_id) {
+                    this.form.faskes = `Puskesmas ${desa.replace(/^(desa|kelurahan)\s+/i,'')}`;
+                  }
+                }
+              }
+          
+              this.modalOpen = true;
             },
-
+        
             filterRow(desaLower, sevRow) {
-                const okText = desaLower.includes((this.q || '').toLowerCase());
-                const okSev  = !this.sev || this.sev === sevRow;
-                return okText && okSev;
+              const okText = desaLower.includes((this.q || '').toLowerCase());
+              const okSev  = !this.sev || this.sev === sevRow;
+              return okText && okSev;
             },
-
+        
             visibleCount() {
-                // hitung row yang lolos filter di sisi klien (kasar)
-                const tbody = document.getElementById('wilRows');
-                const rows = [...tbody.querySelectorAll('tr')].filter(tr => tr.offsetParent !== null);
-                return rows.length;
+              const rows = [...document.querySelectorAll('#wilRows tr')].filter(tr => tr.offsetParent !== null);
+              return rows.length;
             }
+          }
         }
-    }
-    </script>
+        </script>
+
     @endpush
 </x-layout>
