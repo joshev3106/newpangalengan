@@ -40,14 +40,14 @@
             
 
             <div class="grid grid-cols-2 gap-3 w-full md:w-auto md:min-w-[360px]">
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15">
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15 text-red-100">
                         <div class="text-sm text-white/70">Rata-rata Stunting</div>
                         <div class="text-3xl font-bold mt-1">18.5%</div>
                         <div class="mt-2 h-1 rounded bg-white/20">
                             <div class="h-full w-[55%] bg-yellow-300 rounded"></div>
                         </div>
                     </div>
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15">
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15 text-red-100">
                         <div class="text-sm text-white/70">Cluster Hotspot</div>
                         <div class="text-3xl font-bold mt-1">5</div>
                         <div class="mt-2 flex items-center gap-2 text-xs">
@@ -55,12 +55,12 @@
                             <span class="inline-block w-2 h-2 rounded bg-orange-300 ml-2"></span>95%
                         </div>
                     </div>
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15">
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15 text-red-100">
                         <div class="text-sm text-white/70">Desa Dipantau</div>
                         <div class="text-3xl font-bold mt-1">35</div>
                         <div class="mt-2 text-xs text-white/80">Aktif: 35 • Update: Bulanan</div>
                     </div>
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15">
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/15 text-red-100">
                         <div class="text-sm text-white/70">Faskes Terdata</div>
                         <div class="text-3xl font-bold mt-1">12</div>
                         <div class="mt-2 text-xs text-white/80">3 Induk • 4 Pembantu • 5 Posyandu</div>

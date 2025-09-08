@@ -6,7 +6,7 @@
                 .card { break-inside: avoid; }
             }
         </style>
-    @endpush>
+    @endpush
 
     <div class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex items-center justify-between gap-4 mb-6">

@@ -10,16 +10,19 @@
         <div class="mb-6">
             <!-- Tab Navigation -->
             <div id="tab-nav" class="flex space-x-2 mb-4">
-                <button id="btn-stunting"
-                    onclick="switchTab('stunting', event)"
-                    class="flex-1 py-2 px-4 rounded-lg font-semibold bg-red-600 text-white shadow">
-                    Peta Stunting
-                </button>
-                <button id="btn-puskesmas"
-                    onclick="switchTab('puskesmas', event)"
-                    class="flex-1 py-2 px-4 rounded-lg font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 hover:cursor-pointer">
-                    Puskesmas
-                </button>
+              <button id="btn-stunting"
+                onclick="switchTab('stunting', event)"
+                class="flex-1 py-2 px-4 rounded-lg font-semibold bg-red-600 text-white shadow"
+                aria-selected="true">
+                Peta Stunting
+              </button>
+          
+              <button id="btn-puskesmas"
+                onclick="switchTab('puskesmas', event)"
+                class="flex-1 py-2 px-4 rounded-lg font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 hover:cursor-pointer"
+                aria-selected="false">
+                Puskesmas
+              </button>
             </div>
         </div>
 
@@ -206,40 +209,78 @@
 
             // Tab switching (scoped to nav)
             function switchTab(tabName, evt) {
-                // Update tab buttons only inside #tab-nav
-                const nav = document.getElementById('tab-nav');
-                nav.querySelectorAll('button').forEach(btn => {
-                    btn.classList.remove('bg-red-600','text-white','shadow');
-                    btn.classList.add('bg-gray-200','text-gray-600');
-                });
-                if (evt && evt.target) {
-                    evt.target.classList.remove('bg-gray-200','text-gray-600');
-                    evt.target.classList.add('bg-red-600','text-white','shadow');
-                }
-
-                // Hide all tab contents
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-
-                // Show selected tab
-                const target = document.getElementById(`${tabName}-tab`);
-                target.classList.remove('hidden');
-
-                // Initialize / refresh maps
-                setTimeout(() => {
-                    if (tabName === 'stunting') {
-                        if (!mapsInitialized) initializeMaps();
-                        if (stuntingMap) stuntingMap.invalidateSize();
-                    } else if (tabName === 'puskesmas') {
-                        initializePuskesmasMap();
-                        setTimeout(() => puskesmasMap && puskesmasMap.invalidateSize(), 100);
+              const nav = document.getElementById('tab-nav');
+              if (!nav) return;
+            
+              const ACTIVE = ['bg-red-600', 'text-white', 'shadow'];
+              const INACTIVE = ['bg-gray-200', 'text-gray-600', 'hover:bg-gray-300', 'hover:cursor-pointer'];
+            
+              // Reset semua tombol di dalam #tab-nav ke state non-aktif
+              nav.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove(...ACTIVE);
+                btn.classList.add(...INACTIVE);
+                btn.setAttribute('aria-selected', 'false');
+              });
+          
+              // Tombol yang diklik (fallback: cari by id "btn-<tabName>" kalau evt tidak ada)
+              const btn = evt && evt.currentTarget
+                ? evt.currentTarget
+                : document.getElementById(`btn-${tabName}`);
+            
+              if (btn) {
+                btn.classList.remove(...INACTIVE);
+                btn.classList.add(...ACTIVE);
+                btn.setAttribute('aria-selected', 'true');
+              }
+          
+              // Sembunyikan semua konten tab
+              document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+          
+              // Tampilkan konten tab terpilih (pakai id: "<tabName>-tab")
+              const panel = document.getElementById(`${tabName}-tab`);
+              if (panel) panel.classList.remove('hidden');
+            
+              // (Re)size/Init peta bila perlu
+              setTimeout(() => {
+                if (tabName === 'stunting') {
+                  if (typeof mapsInitialized !== 'undefined') {
+                    if (!mapsInitialized && typeof initializeMaps === 'function') initializeMaps();
+                  } else if (typeof initializeMaps === 'function' && typeof stuntingMap === 'undefined') {
+                    // Fallback bila flag tidak tersedia
+                    initializeMaps();
+                  }
+                  if (typeof stuntingMap !== 'undefined' && stuntingMap?.invalidateSize) {
+                    stuntingMap.invalidateSize();
+                  }
+                } else if (tabName === 'puskesmas') {
+                  if ((typeof puskesmasMap === 'undefined' || !puskesmasMap) && typeof initializePuskesmasMap === 'function') {
+                    initializePuskesmasMap();
+                  }
+                  setTimeout(() => {
+                    if (typeof puskesmasMap !== 'undefined' && puskesmasMap?.invalidateSize) {
+                      puskesmasMap.invalidateSize();
                     }
-                }, 100);
+                  }, 50);
+                }
+              }, 50);
             }
+
 
             // Initialize when page loads (default: stunting tab)
             document.addEventListener('DOMContentLoaded', () => {
-                initializeMaps();
+              // nilai dari controller: $tab = request('tab','stunting')
+              const initialTab = @json($tab ?? 'stunting');
+              switchTab(initialTab, null); // ini yang bikin tab awal sesuai query
             });
+
+            function updateUrlQuery(tabName) {
+              const base = window.location.pathname;
+              const q = new URLSearchParams(window.location.search);
+              q.set('tab', tabName);
+              history.replaceState(null, '', `${base}?${q.toString()}`);
+            }
+
+            updateUrlQuery(tabName);
 
             // Make available globally
             window.switchTab = switchTab;

@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Data Stunting | Kecamatan Pangalengan</title>
-    <link rel="icon" href="img/logo-kab-bandung.png" type="image/png">
+    <link rel="icon" href="img/logo-kab-bandung.png">
     <script src="//unpkg.com/alpinejs" defer></script>
     @vite('resources/css/app.css')
 </head>
 <body>
-    <x-navbar></x-navbar>
+    @if(!request()->routeIs('login'))
+        <x-navbar></x-navbar>
+    @endif
 
     <div class="p-2">
         {{ $slot }}

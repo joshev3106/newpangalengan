@@ -30,11 +30,11 @@
                             Stunting
                         </button>
                         <button id="btn-filter-faskes"
-                                class="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 ring-1 ring-blue-100">
+                                class="px-4 py-2 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 ring-1 ring-red-100">
                             Faskes
                         </button>
                         <a href="{{ route('peta') ?? '#' }}"
-                           class="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800">
+                           class="px-4 py-2 rounded-xl bg-red-700 text-white hover:bg-red-800">
                             Buka Peta
                         </a>
                     </div>
@@ -80,7 +80,7 @@
                                    class="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500">
                                     Lihat Analisis
                                 </a>
-                                <a href="{{ route('peta') ?? '#' }}"
+                                <a href="{{ route('peta', ['tab' => 'stunting']) ?? '#' }}"
                                    class="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200">
                                     Pusatkan ke Hotspot
                                 </a>
@@ -100,7 +100,7 @@
                                 3 puskesmas induk, 4 pembantu, 5 posyandu aktif. Fokus KIA & gizi di area medium–tinggi.
                             </p>
                             <div class="mt-3 flex gap-2">
-                                <a href="{{ route('peta') ?? '#' }}"
+                                <a href="{{ route('peta', ['tab' => 'puskesmas']) ?? '#' }}"
                                    class="px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500">
                                     Lihat Peta Faskes
                                 </a>
@@ -113,63 +113,118 @@
                     </div>
                 </div>
 
-                {{-- Info cepat / pengumuman --}}
-                <div class="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl ring-1 ring-amber-100 p-5">
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 text-amber-600">📢</span>
-                        <div>
-                            <div class="font-semibold text-amber-800">Pengingat</div>
-                            <p class="text-amber-700 text-sm mt-1">
-                                Pembaruan data bulanan akan dilakukan pada tanggal 5 setiap bulan. Pastikan input posyandu telah lengkap.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+
 
             </div>
         </div>
 
         {{-- Section tautan cepat --}}
-        <div class="mt-10 grid md:grid-cols-3 gap-6">
+        <div class="mt-10 grid grid-cols-2 md:grid-cols-3 gap-6">
             <a href="{{ route('analisis-hotspot') ?? '#' }}"
                class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">🧪</div>
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
                     <div class="font-semibold text-gray-800 group-hover:text-red-700">Analisis Hotspot</div>
                 </div>
                 <p class="text-gray-600 mt-2 text-sm">Getis-Ord Gi*, cluster 90–99%, rekomendasi intervensi.</p>
             </a>
 
-            <a href="{{ route('peta') ?? '#' }}"
-               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-orange-200 hover:shadow-md transition">
+            <a href="{{ route('data-stunting') ?? '#' }}"
+               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-orange-50 ring-1 ring-orange-100 flex items-center justify-center">🗺️</div>
-                    <div class="font-semibold text-gray-800 group-hover:text-orange-700">Peta Stunting</div>
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="font-semibold text-gray-800 group-hover:text-red-700">Data Stunting</div>
+                </div>
+                <p class="text-gray-600 mt-2 text-sm">Daftar ringkas kasus per desa. Filter & ekspor cepat.</p>
+            </a>
+
+            <a href="{{ route('peta', ['tab' => 'stunting']) ?? '#' }}"
+               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                        </svg>
+                    </div>
+                    <div class="font-semibold text-gray-800 group-hover:text-red-700">Peta Stunting</div>
                 </div>
                 <p class="text-gray-600 mt-2 text-sm">Per desa: tinggi, sedang, rendah. Popup detail & koordinat.</p>
             </a>
 
-            <a href="{{ route('peta') ?? '#' }}"
-               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-blue-200 hover:shadow-md transition">
+            <a href="{{ route('peta', ['tab' => 'puskesmas']) ?? '#' }}"
+               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 ring-1 ring-blue-100 flex items-center justify-center">🏥</div>
-                    <div class="font-semibold text-gray-800 group-hover:text-blue-700">Peta Puskesmas</div>
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                        </svg>
+                    </div>
+                    <div class="font-semibold text-gray-800 group-hover:text-red-700">Peta Puskesmas</div>
                 </div>
                 <p class="text-gray-600 mt-2 text-sm">Induk, pembantu, posyandu. Cakupan & prioritas layanan.</p>
+            </a>
+
+            <a href="{{ route('data-wilayah') ?? '#' }}"
+               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div class="font-semibold text-gray-800 group-hover:text-red-700">Data Wilayah</div>
+                </div>
+                <p class="text-gray-600 mt-2 text-sm">Profil singkat desa: populasi, cakupan faskes, & tingkat stunting.</p>
+            </a>
+
+            <a href="{{ route('laporan') ?? '#' }}"
+               class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                    <!-- Dokumen (outline basic) -->
+                    <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9h6M9 13h6M9 17h6"/>
+                    </svg>
+                    </div>
+                    <div class="font-semibold text-gray-800 group-hover:text-red-700">Laporan</div>
+                </div>
+                <p class="text-gray-600 mt-2 text-sm">Generate ringkasan analisis dan ekspor ke PDF/Excel.</p>
             </a>
         </div>
 
         {{-- CTA Laporan --}}
         <div class="mt-10 bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-                <div class="text-lg font-semibold text-gray-800">Butuh laporan siap presentasi?</div>
-                <p class="text-gray-600">Generate ringkasan analisis & peta ke PDF/Excel untuk rapat lintas dinas.</p>
+                <p class="text-gray-600">Generate ringkasan analisis & peta ke PDF/Excel.</p>
             </div>
             <div class="flex gap-3">
                 <a href="{{ route('laporan') ?? '#' }}"
                    class="px-5 py-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800">📄 Generate Laporan</a>
                 <a href="{{ route('laporan') ?? '#' }}"
                    class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200">📊 Export Analisis</a>
+            </div>
+        </div>
+
+        {{-- Info cepat / pengumuman --}}
+    <div class="bg-gradient-to-r mt-5 from-yellow-50 to-amber-50 rounded-2xl ring-1 ring-amber-100 p-5">
+            <div class="flex items-start gap-3">
+                <span class="mt-0.5 text-amber-600">📢</span>
+                <div>
+                    <div class="font-semibold text-amber-800">Pengingat</div>
+                    <p class="text-amber-700 text-sm mt-1">
+                        Pembaruan data bulanan akan dilakukan pada tanggal 5 setiap bulan. Pastikan input posyandu telah lengkap.
+                    </p>
+                </div>
             </div>
         </div>
     </div>

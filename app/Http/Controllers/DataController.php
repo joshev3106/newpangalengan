@@ -14,12 +14,15 @@ class DataController extends Controller
         return view('analisis-hotspot');
     }
 
-    public function dataStunting() {
-        return view('data-stunting');
-    }
+    // public function dataStunting() {
+    //     return view('data-stunting');
+    // }
 
-    public function peta() {
-        return view('peta');
+    public function peta(Request $request) {
+        $tab = $request->query('tab', 'stunting'); // default ke 'stunting'
+        // jaga-jaga kalau value aneh
+        if (!in_array($tab, ['stunting','puskesmas'], true)) $tab = 'stunting';
+        return view('peta', compact('tab'));
     }
 
     public function dataWilayah() {
