@@ -10,7 +10,7 @@
     @vite('resources/css/app.css')
 </head>
 <body>
-    @if(!request()->routeIs('login'))
+    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit'))
         <x-navbar></x-navbar>
     @endif
 
