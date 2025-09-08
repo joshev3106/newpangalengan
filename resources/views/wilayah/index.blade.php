@@ -13,7 +13,7 @@
             </div>
         @endif
 
-        <div class="flex items-center justify-between gap-4 mb-6">
+        <div class="flex flex-col md:flex-row items-start md:items-center md:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Data Wilayah</h1>
                 <p class="text-gray-600">Profil singkat desa: populasi, cakupan faskes, & tingkat stunting.</p>
@@ -57,10 +57,10 @@
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
             <div class="px-4 py-4 border-b flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
                 <div class="font-semibold text-gray-800">Daftar Desa</div>
-                <div class="flex gap-2">
+                <div class="flex flex-col md:flex-row items-start md:items-center md:justify-between gap-2">
                     <input id="qWil" type="text" placeholder="Cari desa…" x-model="q"
-                           class="rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
-                    <select id="sevWil" x-model="sev" class="hover:cursor-pointer rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                           class="rounded-xl w-full p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                    <select id="sevWil" x-model="sev" class="w-full hover:cursor-pointer rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
                         <option value="">Semua tingkat</option>
                         <option value="high">Tinggi</option>
                         <option value="medium">Sedang</option>
