@@ -5,34 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Data Stunting | Kecamatan Pangalengan</title>
-    <link rel="icon" href="img/logo-kab-bandung.png" type="image/png">
+    <link rel="icon" href="img/logo-kab-bandung.png">
     <script src="//unpkg.com/alpinejs" defer></script>
     @vite('resources/css/app.css')
-
-  <style>
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .animated-gradient {
-      background: linear-gradient(270deg, #ff0080, #7928ca, #00c6ff);
-      background-size: 600% 600%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradientMove 5s ease infinite;
-    }
-  </style>
 </head>
 <body>
-    <x-navbar></x-navbar>
+    @if(!request()->routeIs('login'))
+        <x-navbar></x-navbar>
+    @endif
 
     <div class="p-2">
         {{ $slot }}
     </div>
 
+    <button id="toTopBtn" title="Go To Top"
+      class="hidden fixed bottom-5 right-5 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition hover:cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             class="w-6 h-6" fill="none" 
+             viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M5 15l7-7 7 7" />
+        </svg>
+    </button>
+
     @stack('scripts')
+    @stack('styles')
     @vite('resources/js/app.js')
 </body>
 </html>
