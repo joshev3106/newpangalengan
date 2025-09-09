@@ -4,7 +4,7 @@ const toTopBtn = document.getElementById("toTopBtn");
 
 // Tampilkan tombol saat discroll 200px ke bawah
 window.onscroll = function () {
-  if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+  if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
     toTopBtn.classList.remove("hidden");
   } else {
     toTopBtn.classList.add("hidden");

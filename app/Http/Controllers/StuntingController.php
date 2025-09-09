@@ -30,7 +30,12 @@ class StuntingController extends Controller
     }
 
     public function create() {
-        return view('stunting.create');
+    // default: bulan sebelumnya (YYYY-MM)
+        $defaultPeriod = Carbon::now('Asia/Jakarta')
+            ->subMonthNoOverflow()
+            ->format('Y-m');
+        
+        return view('stunting.create', compact('defaultPeriod'));
     }
 
     public function store(StoreStuntingRequest $request) {
