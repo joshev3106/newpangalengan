@@ -55,7 +55,7 @@
                         class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
                     <option value="">Semua tingkat</option>
                     <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
-                    <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10–20%)</option>
+                    <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
                     <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
                 </select>
 
