@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             PuskesmasSeeder::class,
             test::class,
+            HotspotSeeder::class,
          ]);
 
         User::factory()->create([

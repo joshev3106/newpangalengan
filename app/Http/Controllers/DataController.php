@@ -10,9 +10,9 @@ class DataController extends Controller
         return view('home');
     }
 
-    public function analisisHotspot() {
-        return view('analisis-hotspot');
-    }
+    // public function analisisHotspot() {
+    //     return view('analisis-hotspot');
+    // }
 
     // public function dataStunting() {
     //     return view('data-stunting');
@@ -25,9 +25,9 @@ class DataController extends Controller
         return view('peta', compact('tab'));
     }
 
-    public function dataWilayah() {
-        return view('data-wilayah');
-    }
+    // public function dataWilayah() {
+    //     return view('data-wilayah');
+    // }
 
     public function laporan() {
         return view('laporan');

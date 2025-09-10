@@ -2,22 +2,6 @@
     @push('styles')
         {{-- Leaflet CSS --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-        <style>
-            /* Ensure Leaflet map container has proper dimensions */
-            .leaflet-container { height: 100%; width: 100%; }
-            #hotspot-map { min-height: 400px; }
-            @media (min-width: 768px) { #hotspot-map { min-height: 600px; } }
-            
-            /* Modal styles */
-            .modal { @apply fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4; }
-            .modal-content { @apply bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto; }
-            .hidden { display: none !important; }
-            
-            /* Form styles */
-            .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500; }
-            .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
-            .form-select { @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500; }
-        </style>
     @endpush
 
     <!-- Main Content -->
@@ -272,293 +256,329 @@
         </div>
     </div>
 
-    @push('scripts')
-        {{-- Leaflet JS --}}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-        <script>
-            // Global variables
-            let hotspotMap;
-            let hotspotData = [
-                { id: 1, name: "Cluster 1 - Margamulya", lat: -7.3167, lng: 107.5833, confidence: 99, cases: 45 },
-                { id: 2, name: "Cluster 2 - Warnasari", lat: -7.3267, lng: 107.5733, confidence: 95, cases: 32 },
-                { id: 3, name: "Cluster 3 - Tribaktimulya", lat: -7.3367, lng: 107.5633, confidence: 90, cases: 28 },
-                { id: 4, name: "Area Normal 1", lat: -7.3067, lng: 107.5933, confidence: 0, cases: 12 },
-                { id: 5, name: "Area Normal 2", lat: -7.2967, lng: 107.6033, confidence: 0, cases: 8 },
-                { id: 6, name: "Area Normal 3", lat: -7.3467, lng: 107.5533, confidence: 0, cases: 15 }
-            ];
-            let nextId = 7;
-            let editingId = null;
-            let deleteId = null;
+@push('scripts')
+    {{-- Leaflet JS --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+      // ===== Endpoints & CSRF =====
+      const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      const ENDPOINTS = {
+        list:    "{{ route('hotspots.data') }}",
+        store:   "{{ route('hotspots.store') }}",
+        update:  (id) => "{{ url('/hotspots') }}/" + id,
+        destroy: (id) => "{{ url('/hotspots') }}/" + id,
+      };
 
-            // Initialize map
-            function initializeHotspotMap() {
-                try {
-                    const mapContainer = document.getElementById('hotspot-map');
-                    if (!mapContainer) return;
+      // ===== State =====
+      let hotspotMap;
+      let hotspotData = [];     // akan di-load dari server
+      let editingId = null;
+      let deleteId  = null;
 
-                    hotspotMap = L.map('hotspot-map').setView([-7.3167, 107.5833], 12);
+      // ===== Map =====
+      function initializeHotspotMap() {
+        const mapContainer = document.getElementById('hotspot-map');
+        if (!mapContainer) return;
 
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(hotspotMap);
+        hotspotMap = L.map('hotspot-map').setView([-7.3167, 107.5833], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(hotspotMap);
 
-                    updateMap();
-                } catch (error) {
-                    console.error('Error initializing hotspot map:', error);
-                }
-            }
+        updateMap();
+      }
 
-            // Update map with current data
-            function updateMap() {
-                if (!hotspotMap) return;
-                
-                // Clear existing markers
-                hotspotMap.eachLayer(layer => {
-                    if (layer instanceof L.CircleMarker || layer instanceof L.Circle) {
-                        hotspotMap.removeLayer(layer);
-                    }
-                });
+      function updateMap() {
+        if (!hotspotMap) return;
 
-                // Add markers for hotspot data
-                hotspotData.forEach(item => {
-                    const color = item.confidence === 99 ? '#dc2626' :
-                                  item.confidence === 95 ? '#ea580c' :
-                                  item.confidence === 90 ? '#facc15' : '#d1d5db';
+        // hapus circle/circleMarker sebelumnya
+        hotspotMap.eachLayer(layer => {
+          if (layer instanceof L.CircleMarker || layer instanceof L.Circle) {
+            hotspotMap.removeLayer(layer);
+          }
+        });
 
-                    const radius = item.confidence > 0 ? 15 : 8;
-                    const opacity = item.confidence > 0 ? 0.8 : 0.5;
+        const bounds = [];
 
-                    L.circleMarker([item.lat, item.lng], {
-                        radius,
-                        fillColor: color,
-                        color: '#fff',
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: opacity
-                    }).addTo(hotspotMap)
-                      .bindPopup(`
-                        <div class="p-3">
-                            <strong class="text-gray-800 text-base">${item.name}</strong><br>
-                            <span class="text-gray-600">
-                                ${item.confidence > 0 ? `Confidence: ${item.confidence}%` : 'Not Significant'}<br>
-                                Kasus: ${item.cases} anak
-                            </span>
-                        </div>
-                      `);
-                });
+        hotspotData.forEach(item => {
+          const color = item.confidence === 99 ? '#dc2626'
+                      : item.confidence === 95 ? '#ea580c'
+                      : item.confidence === 90 ? '#facc15' : '#d1d5db';
+          const radius  = item.confidence > 0 ? 15 : 8;
+          const opacity = item.confidence > 0 ? 0.8 : 0.5;
 
-                // Add heat zones for high confidence areas
-                hotspotData.filter(item => item.confidence >= 90).forEach(item => {
-                    const radius = item.confidence === 99 ? 800 :
-                                  item.confidence === 95 ? 600 : 400;
-                    const color = item.confidence === 99 ? '#dc2626' :
-                                  item.confidence === 95 ? '#ea580c' : '#facc15';
+          L.circleMarker([item.lat, item.lng], {
+            radius,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: opacity
+          }).addTo(hotspotMap)
+            .bindPopup(`
+              <div class="p-3">
+                <strong class="text-gray-800 text-base">${item.name}</strong><br>
+                <span class="text-gray-600">
+                  ${item.confidence > 0 ? `Confidence: ${item.confidence}%` : 'Not Significant'}<br>
+                  Kasus: ${item.cases} anak
+                </span>
+              </div>
+            `);
 
-                    L.circle([item.lat, item.lng], {
-                        radius,
-                        fillColor: color,
-                        color: color,
-                        weight: 1,
-                        opacity: 0.3,
-                        fillOpacity: 0.1
-                    }).addTo(hotspotMap);
-                });
-            }
+          bounds.push([item.lat, item.lng]);
+        });
 
-            // Update statistics
-            function updateStatistics() {
-                const high = hotspotData.filter(item => item.confidence === 99).length;
-                const medium = hotspotData.filter(item => item.confidence === 95).length;
-                const low = hotspotData.filter(item => item.confidence === 90).length;
-                const notSignificant = hotspotData.filter(item => item.confidence === 0).length;
-                const total = hotspotData.length;
+        // heat-ish zone
+        hotspotData.filter(i => i.confidence >= 90).forEach(item => {
+          const r = item.confidence === 99 ? 800 :
+                    item.confidence === 95 ? 600 : 400;
+          const c = item.confidence === 99 ? '#dc2626' :
+                    item.confidence === 95 ? '#ea580c' : '#facc15';
 
-                document.getElementById('high-confidence').textContent = high;
-                document.getElementById('medium-confidence').textContent = medium;
-                document.getElementById('low-confidence').textContent = low;
-                document.getElementById('not-significant').textContent = notSignificant;
-                document.getElementById('total-hotspots').textContent = total;
-                document.getElementById('total-clusters').textContent = `${total} Area`;
-            }
+          L.circle([item.lat, item.lng], {
+            radius: r,
+            fillColor: c,
+            color: c,
+            weight: 1,
+            opacity: 0.3,
+            fillOpacity: 0.1
+          }).addTo(hotspotMap);
+        });
 
-            // Update table
-            function updateTable() {
-                const tbody = document.getElementById('hotspot-table-body');
-                tbody.innerHTML = '';
+        if (bounds.length) hotspotMap.fitBounds(bounds, { padding:[20,20] });
+      }
 
-                hotspotData.forEach(item => {
-                    const confidenceBadge = item.confidence === 99 ? 
-                        '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">99% High</span>' :
-                        item.confidence === 95 ? 
-                        '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">95% Medium</span>' :
-                        item.confidence === 90 ? 
-                        '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">90% Low</span>' :
-                        '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Not Significant</span>';
+      // ===== Statistik & Tabel =====
+      function updateStatistics() {
+        const high  = hotspotData.filter(i => i.confidence === 99).length;
+        const medium= hotspotData.filter(i => i.confidence === 95).length;
+        const low   = hotspotData.filter(i => i.confidence === 90).length;
+        const not   = hotspotData.filter(i => i.confidence === 0).length;
+        const total = hotspotData.length;
 
-                    const statusBadge = item.confidence > 0 ?
-                        '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Hotspot</span>' :
-                        '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Normal</span>';
+        document.getElementById('high-confidence').textContent    = high;
+        document.getElementById('medium-confidence').textContent  = medium;
+        document.getElementById('low-confidence').textContent     = low;
+        document.getElementById('not-significant').textContent    = not;
+        document.getElementById('total-hotspots').textContent     = total;
+        document.getElementById('total-clusters').textContent     = `${total} Area`;
+      }
 
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${confidenceBadge}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.cases}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="editHotspot(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                            <button onclick="deleteHotspot(${item.id})" class="text-red-600 hover:text-red-900">Hapus</button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
+      function updateTable() {
+        const tbody = document.getElementById('hotspot-table-body');
+        tbody.innerHTML = '';
 
-            // CRUD Operations
-            function addHotspot() {
-                editingId = null;
-                document.getElementById('modal-title').textContent = 'Tambah Hotspot Baru';
-                document.getElementById('hotspot-form').reset();
-                document.getElementById('hotspot-id').value = '';
-                document.getElementById('hotspot-modal').classList.remove('hidden');
-            }
+        hotspotData.forEach(item => {
+          const confidenceBadge = item.confidence === 99
+            ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">99% High</span>'
+            : item.confidence === 95
+              ? '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">95% Medium</span>'
+              : item.confidence === 90
+                ? '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">90% Low</span>'
+                : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Not Significant</span>';
 
-            function editHotspot(id) {
-                const item = hotspotData.find(h => h.id === id);
-                if (!item) return;
+          const statusBadge = item.confidence > 0
+            ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Hotspot</span>'
+            : '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Normal</span>';
 
-                editingId = id;
-                document.getElementById('modal-title').textContent = 'Edit Hotspot';
-                document.getElementById('hotspot-id').value = id;
-                document.getElementById('hotspot-name').value = item.name;
-                document.getElementById('hotspot-lat').value = item.lat;
-                document.getElementById('hotspot-lng').value = item.lng;
-                document.getElementById('hotspot-confidence').value = item.confidence;
-                document.getElementById('hotspot-cases').value = item.cases;
-                document.getElementById('hotspot-modal').classList.remove('hidden');
-            }
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${Number(item.lat).toFixed(4)}, ${Number(item.lng).toFixed(4)}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${confidenceBadge}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.cases}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button onclick="editHotspot(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+              <button onclick="deleteHotspot(${item.id})" class="text-red-600 hover:text-red-900">Hapus</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
 
-            function deleteHotspot(id) {
-                deleteId = id;
-                document.getElementById('delete-modal').classList.remove('hidden');
-            }
+      // ===== CRUD (Modal) =====
+      function addHotspot() {
+        editingId = null;
+        document.getElementById('modal-title').textContent = 'Tambah Hotspot Baru';
+        document.getElementById('hotspot-form').reset();
+        document.getElementById('hotspot-id').value = '';
+        document.getElementById('hotspot-modal').classList.remove('hidden');
+      }
 
-            function saveHotspot() {
-                const formData = {
-                    name: document.getElementById('hotspot-name').value.trim(),
-                    lat: parseFloat(document.getElementById('hotspot-lat').value),
-                    lng: parseFloat(document.getElementById('hotspot-lng').value),
-                    confidence: parseInt(document.getElementById('hotspot-confidence').value),
-                    cases: parseInt(document.getElementById('hotspot-cases').value)
-                };
+      function editHotspot(id) {
+        const item = hotspotData.find(h => h.id === id);
+        if (!item) return;
 
-                // Validation
-                if (!formData.name || isNaN(formData.lat) || isNaN(formData.lng) || isNaN(formData.cases)) {
-                    alert('Harap isi semua field yang wajib diisi dengan benar!');
-                    return;
-                }
+        editingId = id;
+        document.getElementById('modal-title').textContent = 'Edit Hotspot';
+        document.getElementById('hotspot-id').value = id;
+        document.getElementById('hotspot-name').value = item.name;
+        document.getElementById('hotspot-lat').value = item.lat;
+        document.getElementById('hotspot-lng').value = item.lng;
+        document.getElementById('hotspot-confidence').value = item.confidence;
+        document.getElementById('hotspot-cases').value = item.cases;
+        document.getElementById('hotspot-modal').classList.remove('hidden');
+      }
 
-                if (editingId) {
-                    // Update existing
-                    const index = hotspotData.findIndex(h => h.id === editingId);
-                    if (index !== -1) {
-                        hotspotData[index] = { ...formData, id: editingId };
-                    }
-                } else {
-                    // Add new
-                    hotspotData.push({ ...formData, id: nextId++ });
-                }
+      function deleteHotspot(id) {
+        deleteId = id;
+        document.getElementById('delete-modal').classList.remove('hidden');
+      }
 
-                closeModal();
-                refreshView();
-                alert(editingId ? 'Hotspot berhasil diupdate!' : 'Hotspot berhasil ditambahkan!');
-            }
+      function closeModal() {
+        document.getElementById('hotspot-modal').classList.add('hidden');
+        editingId = null;
+      }
 
-            function confirmDelete() {
-                if (deleteId) {
-                    hotspotData = hotspotData.filter(h => h.id !== deleteId);
-                    closeDeleteModal();
-                    refreshView();
-                    alert('Hotspot berhasil dihapus!');
-                }
-            }
+      function closeDeleteModal() {
+        document.getElementById('delete-modal').classList.add('hidden');
+        deleteId = null;
+      }
 
-            function closeModal() {
-                document.getElementById('hotspot-modal').classList.add('hidden');
-                editingId = null;
-            }
+      async function saveHotspot() {
+        const payload = {
+          name: document.getElementById('hotspot-name').value.trim(),
+          lat:  parseFloat(document.getElementById('hotspot-lat').value),
+          lng:  parseFloat(document.getElementById('hotspot-lng').value),
+          confidence: parseInt(document.getElementById('hotspot-confidence').value),
+          cases: parseInt(document.getElementById('hotspot-cases').value),
+        };
 
-            function closeDeleteModal() {
-                document.getElementById('delete-modal').classList.add('hidden');
-                deleteId = null;
-            }
+        if (!payload.name || isNaN(payload.lat) || isNaN(payload.lng) || isNaN(payload.cases)) {
+          alert('Harap isi semua field yang wajib diisi dengan benar!');
+          return;
+        }
 
-            function refreshView() {
-                updateMap();
-                updateTable();
-                updateStatistics();
-            }
+        const isEdit = !!editingId;
+        const url    = isEdit ? ENDPOINTS.update(editingId) : ENDPOINTS.store;
+        const method = isEdit ? 'PUT' : 'POST';
 
-            function refreshAnalysis() {
-                // Simulate analysis refresh
-                alert('Analisis sedang diperbarui... Proses ini dapat memakan waktu beberapa menit.');
-                // In real implementation, this would call backend API
-            }
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': CSRF,
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload)
+          });
 
-            // Event listeners
-            document.addEventListener('DOMContentLoaded', () => {
-                // Initialize map
-                setTimeout(initializeHotspotMap, 300);
-                
-                // Initialize table and statistics
-                updateTable();
-                updateStatistics();
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'Gagal menyimpan data');
+          }
 
-                // Modal event listeners
-                document.getElementById('add-hotspot-btn').addEventListener('click', addHotspot);
-                document.getElementById('refresh-analysis-btn').addEventListener('click', refreshAnalysis);
-                
-                // Form submission
-                document.getElementById('hotspot-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    saveHotspot();
-                });
+          const data = await res.json();
 
-                // Modal close buttons
-                document.getElementById('close-modal').addEventListener('click', closeModal);
-                document.getElementById('cancel-btn').addEventListener('click', closeModal);
-                
-                // Delete modal buttons
-                document.getElementById('cancel-delete').addEventListener('click', closeDeleteModal);
-                document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
+          if (isEdit) {
+            const idx = hotspotData.findIndex(h => h.id === editingId);
+            if (idx !== -1) hotspotData[idx] = data;
+          } else {
+            hotspotData.push(data);
+          }
 
-                // Close modal when clicking outside
-                document.getElementById('hotspot-modal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('hotspot-modal')) {
-                        closeModal();
-                    }
-                });
+          closeModal();
+          refreshView();
+          alert(isEdit ? 'Hotspot berhasil diupdate!' : 'Hotspot berhasil ditambahkan!');
+        } catch (e) {
+          console.error(e);
+          alert(e.message);
+        }
+      }
 
-                document.getElementById('delete-modal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('delete-modal')) {
-                        closeDeleteModal();
-                    }
-                });
+      async function confirmDelete() {
+        if (!deleteId) return;
 
-                // Keyboard shortcuts
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
-                        closeModal();
-                        closeDeleteModal();
-                    }
-                });
-            });
+        try {
+          const res = await fetch(ENDPOINTS.destroy(deleteId), {
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': CSRF,
+              'Accept': 'application/json',
+            },
+          });
 
-            // Global functions for onclick handlers
-            window.editHotspot = editHotspot;
-            window.deleteHotspot = deleteHotspot;
-        </script>
-    @endpush
+          if (!res.ok) throw new Error('Gagal menghapus data');
+
+          hotspotData = hotspotData.filter(h => h.id !== deleteId);
+          closeDeleteModal();
+          refreshView();
+          alert('Hotspot berhasil dihapus!');
+        } catch (e) {
+          console.error(e);
+          alert(e.message);
+        }
+      }
+
+      function refreshView() {
+        updateMap();
+        updateTable();
+        updateStatistics();
+      }
+
+      async function loadData() {
+        try {
+          const res = await fetch(ENDPOINTS.list, { headers: { 'Accept':'application/json' } });
+          const json = await res.json();
+          hotspotData = Array.isArray(json.data) ? json.data : [];
+          refreshView();
+        } catch (e) {
+          console.error('Gagal load data hotspot:', e);
+        }
+      }
+
+      function refreshAnalysis() {
+        // Placeholder: kalau nanti ada endpoint analisis, panggil di sini
+        alert('Analisis diperbarui (simulasi).');
+      }
+
+      // ===== Events =====
+      document.addEventListener('DOMContentLoaded', () => {
+        // Map (sedikit delay untuk memastikan container siap)
+        setTimeout(initializeHotspotMap, 300);
+
+        // Ambil data awal dari server
+        loadData();
+
+        // Tombol
+        document.getElementById('add-hotspot-btn').addEventListener('click', addHotspot);
+        document.getElementById('refresh-analysis-btn').addEventListener('click', refreshAnalysis);
+
+        // Form submit di modal
+        document.getElementById('hotspot-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          saveHotspot();
+        });
+
+        // Tutup modal
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('cancel-btn').addEventListener('click', closeModal);
+
+        // Delete modal
+        document.getElementById('cancel-delete').addEventListener('click', closeDeleteModal);
+        document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
+
+        // Klik luar modal
+        document.getElementById('hotspot-modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('hotspot-modal')) closeModal();
+        });
+        document.getElementById('delete-modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
+        });
+
+        // Escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { closeModal(); closeDeleteModal(); }
+        });
+      });
+
+      // Global utk tombol di tabel
+      window.editHotspot = editHotspot;
+      window.deleteHotspot = deleteHotspot;
+    </script>
+@endpush
+
 </x-layout>

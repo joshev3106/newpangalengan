@@ -133,7 +133,7 @@
                 <p class="text-gray-600 mt-2 text-sm">Getis-Ord Gi*, cluster 90–99%, rekomendasi intervensi.</p>
             </a>
 
-            <a href="{{ route('data-stunting') ?? '#' }}"
+            <a href="{{ route('stunting.index') ?? '#' }}"
                class="group bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 hover:ring-red-200 hover:shadow-md transition">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
