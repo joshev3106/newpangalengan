@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stunting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -10,9 +11,10 @@ use Illuminate\Support\Collection;
 class HotspotController extends Controller
 {
     // Halaman (publik)
-        public function index(Request $request)
+    public function index(Request $request)
     {
-        $data = $this->buildDataset($request); // Collection of arrays
+        // buildDataset sekarang mengembalikan [periodUntukView, collection]
+        [$period, $data] = $this->buildDataset($request);
 
         $stats = [
             'high'   => $data->where('confidence', 99)->count(),
@@ -22,37 +24,65 @@ class HotspotController extends Controller
             'total'  => $data->count(),
         ];
 
-        $perPage = 20;
-        $page    = $request->integer('page', 1);
-        $items   = $data->forPage($page, $perPage)->values();
+        // Pagination manual dari collection
+        $perPage  = 20;
+        $page     = max(1, (int) $request->query('page', 1));
+        $items    = $data->forPage($page, $perPage)->values();
         $hotspots = new LengthAwarePaginator(
-            $items, $data->count(), $perPage, $page,
+            $items,
+            $data->count(),
+            $perPage,
+            $page,
             ['path' => url()->current(), 'query' => $request->query()]
         );
 
-        return view('hotspot.index', compact('hotspots', 'stats'));
+        return view('hotspot.index', compact('hotspots', 'stats', 'period'));
     }
 
     // JSON publik (kalau butuh fetch via JS)
     public function data(Request $request)
     {
-        return response()->json($this->buildDataset($request)->values());
+        [, $data] = $this->buildDataset($request);
+        return response()->json($data->values());
     }
 
     /**
      * Build dataset dari tabel stuntings:
-     * - record terbaru per desa (MAX(period)) atau filter ?period=YYYY-MM
-     * - hitung rate => severity => confidence
-     * - tempel lat/lng dari config/desa_coords.php
+     * - Jika ada ?period=YYYY-MM / YYYY-MM-DD → ambil periode itu.
+     * - Jika tidak, ambil record terbaru per desa (MAX(period)).
+     * - Hitung rate => severity => confidence.
+     * - Tempel lat/lng dari config('desa_coords').
+     *
+     * @return array{0:?string,1:Collection<int,array<string,mixed>>} [periodUntukView, data]
      */
-    private function buildDataset(Request $request): Collection
+    private function buildDataset(Request $request): array
     {
         $coords = config('desa_coords', []);
-        $periodQ = $request->string('period')->toString(); // opsional ?period=2025-09
 
-        if ($periodQ) {
-            $rows = Stunting::where('period', $periodQ.'-01')->get();
+        // Normalisasi period (?period=YYYY-MM atau YYYY-MM-DD)
+        $periodParam = trim((string) $request->query('period', ''));
+        $normalized  = null;  // YYYY-MM-01
+        if ($periodParam !== '') {
+            if (preg_match('/^\d{4}-\d{2}$/', $periodParam)) {
+                $normalized = $periodParam . '-01';
+            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $periodParam)) {
+                $normalized = $periodParam;
+            } else {
+                try {
+                    $normalized = Carbon::parse($periodParam)->startOfMonth()->toDateString();
+                } catch (\Throwable $e) {
+                    $normalized = null;
+                }
+            }
+        }
+
+        if ($normalized) {
+            // Filter periode tertentu
+            $rows = Stunting::whereDate('period', $normalized)
+                ->orderBy('desa')
+                ->get();
         } else {
+            // Terbaru per desa (MAX(period))
             $latest = Stunting::select('desa')
                 ->selectRaw('MAX(period) as last_period')
                 ->groupBy('desa');
@@ -65,18 +95,19 @@ class HotspotController extends Controller
                 ->get(['stuntings.*']);
         }
 
-        return $rows->map(function (Stunting $s) use ($coords) {
+        $collection = $rows->map(function (Stunting $s) use ($coords) {
             $rate = $s->populasi > 0 ? round(($s->kasus / $s->populasi) * 100, 1) : 0.0;
 
             // severity → confidence (proxy)
             $severity   = $rate > 20 ? 'high' : ($rate >= 10 ? 'medium' : 'low');
-            $confidence = match ($severity) {
-                'high'   => 99,
-                'medium' => 95,
-                default  => ($rate > 0 ? 90 : 0),
-            };
+            $confidence = $rate == 0 ? 0 : ($severity === 'high' ? 99 : ($severity === 'medium' ? 95 : 90));
 
             $point = $coords[$s->desa] ?? null;
+
+            // pastikan period string "Y-m" utk view/JS
+            $periodStr = $s->period instanceof \Carbon\CarbonInterface
+                ? $s->period->format('Y-m')
+                : Carbon::parse($s->period)->format('Y-m');
 
             return [
                 'id'         => $s->id,
@@ -84,65 +115,18 @@ class HotspotController extends Controller
                 'name'       => "Cluster - {$s->desa}",
                 'lat'        => $point['lat'] ?? null,
                 'lng'        => $point['lng'] ?? null,
-                'population' => (int) $s->populasi,   // <= penting buat popup
+                'population' => (int) $s->populasi,
                 'cases'      => (int) $s->kasus,
                 'rate'       => $rate,
                 'severity'   => $severity,
                 'confidence' => $confidence,
-                'period'     => optional($s->period)->format('Y-m'),
+                'period'     => $periodStr,
             ];
         });
+
+        // Nilai period utk info bar di view (YYYY-MM) atau null (data terbaru)
+        $periodForView = $normalized ? substr($normalized, 0, 7) : null;
+
+        return [$periodForView, $collection];
     }
-
-    // Catatan: kalau kamu masih punya method store/update/destroy dari CRUD lama, biarkan saja
-    // atau nonaktifkan jika kini semua dihitung dari tabel 'stuntings'.
-
-    // // FORM CREATE
-    // public function create()
-    // {
-    //     return view('hotspot.create');
-    // }
-
-    // // SIMPAN
-    // public function store(Request $request)
-    // {
-    //     $data = $request->validate([
-    //         'name'       => ['required','string','max:150'],
-    //         'lat'        => ['required','numeric','between:-90,90'],
-    //         'lng'        => ['required','numeric','between:-180,180'],
-    //         'confidence' => ['required','integer','in:0,90,95,99'],
-    //         'cases'      => ['required','integer','min:0'],
-    //     ]);
-
-    //     Hotspot::create($data);
-    //     return redirect()->route('hotspot.index')->with('ok','Hotspot berhasil ditambahkan');
-    // }
-
-    // // FORM EDIT
-    // public function edit(Hotspot $hotspot)
-    // {
-    //     return view('hotspot.edit', compact('hotspot'));
-    // }
-
-    // // UPDATE
-    // public function update(Request $request, Hotspot $hotspot)
-    // {
-    //     $data = $request->validate([
-    //         'name'       => ['required','string','max:150'],
-    //         'lat'        => ['required','numeric','between:-90,90'],
-    //         'lng'        => ['required','numeric','between:-180,180'],
-    //         'confidence' => ['required','integer','in:0,90,95,99'],
-    //         'cases'      => ['required','integer','min:0'],
-    //     ]);
-
-    //     $hotspot->update($data);
-    //     return redirect()->route('hotspot.index')->with('ok','Hotspot berhasil diupdate');
-    // }
-
-    // // HAPUS
-    // public function destroy(Hotspot $hotspot)
-    // {
-    //     $hotspot->delete();
-    //     return back()->with('ok','Hotspot dihapus');
-    // }
 }

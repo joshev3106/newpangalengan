@@ -10,14 +10,12 @@ use App\Http\Controllers\StuntingController;
 
 // Publik bisa lihat daftar
 Route::resource('stunting', StuntingController::class)->only(['index']);
+Route::get('/stunting/chart-data', [StuntingController::class, 'chartData'])->name('stunting.chart');
+
 Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah.index');
 
-// Hotspot index (publik) + JSON data (publik)
 Route::get('/hotspot', [HotspotController::class, 'index'])->name('hotspot.index');
 Route::get('/hotspot/data', [HotspotController::class, 'data'])->name('hotspot.data');
-
-// Alias URL lama tetap hidup
-Route::get('/analisis-hotspot', fn () => redirect()->route('hotspot.index'))->name('analisis-hotspot');
 
 Route::middleware('guest')->group( function () {
     // Auth Routes
@@ -38,6 +36,5 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/', [DataController::class, 'home'])->name('home');
-Route::get('/analisis-hotspot', [DataController::class, 'analisisHotspot'])->name('analisis-hotspot');
 Route::get('/peta', [DataController::class, 'peta'])->name('peta');
 Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
