@@ -39,39 +39,44 @@
 
         {{-- Filter Bar (server-side) --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-5">
-          <form method="GET" action="{{ route('stunting.index') }}" id="filterForm" class="grid md:grid-cols-4 gap-3">
+          <form method="GET" action="{{ route('stunting.index') }}" id="filterForm" class="flex flex-col md:flex-row justify-between gap-3">
               {{-- simpan view aktif agar konsisten setelah submit --}}
-              <input type="hidden" name="view" id="viewInput" value="{{ $currentView }}">
+              <div class="flex flex-col md:flex-row gap-2">
+                <input type="hidden" name="view" id="viewInput" value="{{ $currentView }}">
+  
+                <div class="relative">
+                    <input name="q" id="q" type="text" placeholder="Cari desa …"
+                           value="{{ $q ?? '' }}"
+                           class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-10">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
+                    </svg>
+                </div>
+  
+                <select name="severity" id="severity"
+                        class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+                    <option value="">Semua tingkat</option>
+                    <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
+                    <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
+                    <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
+                </select>
 
-              <div class="relative">
-                  <input name="q" id="q" type="text" placeholder="Cari desa …"
-                         value="{{ $q ?? '' }}"
-                         class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-10">
-                  <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
-                  </svg>
+                {{-- Satu input month utk pilih periode --}}
+                <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
+                       class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
               </div>
 
-              <select name="severity" id="severity"
-                      class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
-                  <option value="">Semua tingkat</option>
-                  <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
-                  <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
-                  <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
-              </select>
-
-              {{-- Satu input month utk pilih periode --}}
-              <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
-                     class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
 
               <div class="md:col-span-4 flex items-center gap-2 pt-1">
-                  <button class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500" type="submit">
+                  <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white hover:bg-red-500" type="submit">
                       Terapkan
                   </button>
-                  <a href="{{ route('stunting.index', ['view' => $currentView]) }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-                      Reset
-                  </a>
+                  @if(request()->has('period'))
+                    <a href="{{ route('stunting.index', ['view' => $currentView]) }}" class="px-4 py-2 w-full text-center rounded-lg bg-gray-100 hover:bg-gray-200">
+                        Reset
+                    </a>
+                  @endif
               </div>
           </form>
         </div>
@@ -191,132 +196,191 @@
     </div>
 
     @push('scripts')
-        {{-- Chart libs untuk tab Grafik --}}
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  {{-- Chart libs untuk tab Grafik --}}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-        <script>
-          // Register datalabels sekali
-          if (window.ChartDataLabels && !Chart.registry.plugins.get('datalabels')) {
-            Chart.register(window.ChartDataLabels);
-          }
+  <script>
+    // Register datalabels sekali (aman jika script di-include berkali-kali)
+    if (window.ChartDataLabels && !Chart.registry.plugins.get('datalabels')) {
+      Chart.register(window.ChartDataLabels);
+    }
 
-          // Simpan instance supaya tidak dobel render
-          let rankingChartInstance = null;
-          let trendChartInstance   = null;
-          const colorByRate = (v) => v > 20 ? '#dc2626' : (v >= 10 ? '#f97316' : '#16a34a');
+    // Simpan instance supaya tidak dobel render
+    let rankingChartInstance = null;
+    let trendChartInstance   = null;
 
-          async function loadChartsIfNeeded() {
-            // kalau sudah ada instance, cukup return
-            if (rankingChartInstance && trendChartInstance) return;
+    // Warna batang berdasarkan rate (%)
+    const colorByRate = (v) => v > 20 ? '#dc2626' : (v >= 10 ? '#f97316' : '#16a34a');
 
-            const periodParam = @json($period ?? null);
-            const url = new URL(@json(route('stunting.chart')), window.location.origin);
-            if (periodParam) url.searchParams.set('period', periodParam);
+    // Bulatkan ke atas ke kelipatan 5 serta beri headroom 15% biar skala rapi
+    const pad5 = (v) => Math.ceil((v * 1.15) / 5) * 5;
 
-            const res  = await fetch(url);
-            const json = await res.json();
+    async function loadChartsIfNeeded() {
+      // Kalau chart sudah dibuat, tidak usah render lagi
+      if (rankingChartInstance && trendChartInstance) return;
 
-            // ------- RANKING (horizontal bar) -------
-            const labels = json.ranking.map(r => r.desa);
-            const data   = json.ranking.map(r => r.rate);
-            const colors = data.map(colorByRate);
+      // Siapkan URL endpoint JSON chart
+      const periodParam = @json($period ?? null);
+      const url = new URL(@json(route('stunting.chart')));
+      if (periodParam) url.searchParams.set('period', periodParam);
 
-            const rctx = document.getElementById('rankingChart').getContext('2d');
-            rankingChartInstance = new Chart(rctx, {
-              type: 'bar',
-              data: {
-                labels,
-                datasets: [{ label: 'Tingkat (%)', data, backgroundColor: colors, borderWidth: 0 }]
+      // Ambil data JSON
+      let json;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Gagal memuat data chart');
+        json = await res.json();
+      } catch (e) {
+        console.error(e);
+        return; // gagal fetch -> hentikan
+      }
+
+      // --------- Siapkan data & skala ----------
+      const labels = (json.ranking ?? []).map(r => r.desa);
+      const data   = (json.ranking ?? []).map(r => r.rate);
+      const colors = data.map(colorByRate);
+
+      const maxRate  = data.length ? Math.max(...data) : 0;
+      const maxTrend = (json.trend ?? []).length ? Math.max(...json.trend) : 0;
+
+      // --------- RANKING (horizontal bar) ----------
+      const rCanvas = document.getElementById('rankingChart');
+      if (rCanvas) {
+        const rctx = rCanvas.getContext('2d');
+        rankingChartInstance = new Chart(rctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Tingkat (%)',
+              data,
+              backgroundColor: colors,
+              borderWidth: 0
+            }]
+          },
+          options: {
+            indexAxis: 'y',               // horizontal
+            responsive: true,
+            maintainAspectRatio: false,   // tinggi ikut container
+            scales: {
+              x: {
+                beginAtZero: true,
+                suggestedMax: pad5(maxRate),
+                ticks: { stepSize: 5, callback: v => v + '%' }
               },
-              options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  x: { beginAtZero: true, suggestedMax: 35, ticks: { callback: v => v + '%' } },
-                  y: { ticks: { autoSkip: false } }
-                },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } },
-                  datalabels: { anchor: 'end', align: 'right', formatter: v => v + '%', clamp: true }
-                }
+              y: { ticks: { autoSkip: false } }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } },
+              datalabels: {
+                anchor: 'end',
+                align: 'right',
+                formatter: (v) => v + '%',
+                clamp: true
               }
-            });
-
-            // ------- TREND (line) -------
-            const tctx = document.getElementById('trendChart').getContext('2d');
-            trendChartInstance = new Chart(tctx, {
-              type: 'line',
-              data: {
-                labels: json.periods,
-                datasets: [{ label: 'Rata-rata (%)', data: json.trend, fill: false, pointRadius: 3, tension: .25 }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } },
-                plugins: {
-                  legend: { display: false },
-                  datalabels: { align: 'top', anchor: 'end', formatter: v => v + '%' }
-                }
-              }
-            });
-          }
-
-          // Tabs logic
-          const viewInput = document.getElementById('viewInput');
-          const tabBtns   = document.querySelectorAll('.tab-btn');
-          const tabTable  = document.getElementById('tab-table');
-          const tabChart  = document.getElementById('tab-chart');
-
-          function setActiveTab(name) {
-            // toggle content
-            if (name === 'chart') {
-              tabChart.classList.remove('hidden');
-              tabTable.classList.add('hidden');
-              loadChartsIfNeeded(); // render chart jika belum
-            } else {
-              tabTable.classList.remove('hidden');
-              tabChart.classList.add('hidden');
             }
-            // update tombol
-            tabBtns.forEach(btn => {
-              const active = btn.dataset.tab === name;
-              btn.classList.toggle('bg-white', active);
-              btn.classList.toggle('shadow', active);
-              btn.classList.toggle('text-gray-900', active);
-              btn.classList.toggle('text-gray-600', !active);
-            });
-            // simpan ke input hidden & URL (tanpa reload)
-            if (viewInput) viewInput.value = name;
-            const url = new URL(window.location.href);
-            url.searchParams.set('view', name);
-            window.history.replaceState({}, '', url.toString());
           }
+        });
+      }
 
-          tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
-          });
+      // --------- TREND (line) ----------
+      const tCanvas = document.getElementById('trendChart');
+      if (tCanvas) {
+        const tctx = tCanvas.getContext('2d');
+        trendChartInstance = new Chart(tctx, {
+          type: 'line',
+          data: {
+            labels: json.periods ?? [],
+            datasets: [{
+              label: 'Rata-rata (%)',
+              data: json.trend ?? [],
+              fill: false,
+              pointRadius: 3,
+              tension: .25
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                suggestedMax: pad5(maxTrend),
+                ticks: { stepSize: 5, callback: v => v + '%' }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                align: 'top',
+                anchor: 'end',
+                formatter: (v) => v + '%'
+              }
+            }
+          }
+        });
+      }
+    }
 
-          // Inisialisasi sesuai server state
-          document.addEventListener('DOMContentLoaded', () => {
-            const initial = @json($currentView);
-            setActiveTab(initial);
-          });
+    // ---------- Tabs logic ----------
+    const viewInput = document.getElementById('viewInput'); // hidden input di form filter
+    const tabBtns   = document.querySelectorAll('.tab-btn');
+    const tabTable  = document.getElementById('tab-table');
+    const tabChart  = document.getElementById('tab-chart');
 
-          // Submit otomatis saat filter diubah (opsional)
-          const f = document.getElementById('filterForm');
-          const sev = document.getElementById('severity');
-          const period = document.getElementById('period');
-          if (sev)    sev.addEventListener('change',   () => f.submit());
-          if (period) period.addEventListener('change',() => f.submit());
+    function setActiveTab(name) {
+      if (!tabTable || !tabChart) return;
 
-          const q = document.getElementById('q');
-          if (q) q.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') f.submit();
-          });
-        </script>
-    @endpush
+      // Toggle konten
+      if (name === 'chart') {
+        tabChart.classList.remove('hidden');
+        tabTable.classList.add('hidden');
+        loadChartsIfNeeded(); // render chart saat pertama kali buka tab
+      } else {
+        tabTable.classList.remove('hidden');
+        tabChart.classList.add('hidden');
+      }
+
+      // Update style tombol tab
+      tabBtns.forEach(btn => {
+        const active = btn.dataset.tab === name;
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('shadow', active);
+        btn.classList.toggle('text-gray-900', active);
+        btn.classList.toggle('text-gray-600', !active);
+      });
+
+      // Simpan ke hidden input & URL (tanpa reload)
+      if (viewInput) viewInput.value = name;
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', name);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+    });
+
+    // Inisialisasi sesuai state dari server (variabel $currentView harus dikirim dari controller)
+    document.addEventListener('DOMContentLoaded', () => {
+      const initial = @json($currentView ?? 'table');
+      setActiveTab(initial);
+    });
+
+    // // ---------- Auto submit filter ----------
+    // const f = document.getElementById('filterForm');
+    // const sev = document.getElementById('severity');
+    // const period = document.getElementById('period');
+    // if (f && sev)    sev.addEventListener('change',   () => f.submit());
+    // if (f && period) period.addEventListener('change',() => f.submit());
+
+    const q = document.getElementById('q');
+    if (f && q) q.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') f.submit();
+    });
+  </script>
+@endpush
+
 </x-layout>

@@ -18,7 +18,7 @@
       <input type="month" name="period" value="{{ request('period') }}"
              class="rounded-lg w-full border border-gray-300 px-3 py-2">
       <div class="flex gap-2 w-full">
-        <button class="px-4 py-2 rounded-lg w-full bg-red-600 text-white">Terapkan</button>
+        <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white">Terapkan</button>
         @if(request()->has('period'))
           <a href="{{ route('hotspot.index') }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
         @endif
@@ -185,6 +185,13 @@
 
         if (bounds.length) map.fitBounds(bounds,{padding:[20,20]});
       });
+
+      // ---------- Auto submit filter ----------
+      // const f = document.getElementById('filterForm');
+      // const sev = document.getElementById('severity');
+      // const period = document.getElementById('period');
+      // if (f && sev)    sev.addEventListener('change',   () => f.submit());
+      // if (f && period) period.addEventListener('change',() => f.submit());
     </script>
   @endpush
 </x-layout>
