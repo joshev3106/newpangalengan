@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
          $this->call([
             AdminUserSeeder::class,
             PuskesmasSeeder::class,
-            test::class,
+            DataDesa::class,
             HotspotSeeder::class,
          ]);
 

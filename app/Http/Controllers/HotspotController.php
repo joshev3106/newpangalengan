@@ -69,7 +69,7 @@ class HotspotController extends Controller
             $rate = $s->populasi > 0 ? round(($s->kasus / $s->populasi) * 100, 1) : 0.0;
 
             // severity → confidence (proxy)
-            $severity   = $rate > 20 ? 'high' : ($rate >= 10 ? 'medium' : 'low');
+            $severity   = $rate > 30 ? 'high' : ($rate >= 10 ? 'medium' : 'low');
             $confidence = match ($severity) {
                 'high'   => 99,
                 'medium' => 95,
