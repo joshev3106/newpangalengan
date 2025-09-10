@@ -15,7 +15,7 @@
     @endif
 
     {{-- Overview Cards --}}
-    <div class="grid md:grid-cols-3 gap-6 mb-6">
+    {{-- <div class="grid md:grid-cols-3 gap-6 mb-6">
       <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
         <h3 class="text-lg font-semibold text-gray-800 mb-3">Analisis Spasial</h3>
         <p class="text-gray-600">Wilayah dengan konsentrasi tinggi kasus stunting berdasarkan analisis spasial (Getis-Ord Gi*).</p>
@@ -28,7 +28,7 @@
         <h3 class="text-lg font-semibold text-gray-800 mb-3">Metodologi</h3>
         <p class="text-gray-600">Clustering spasial untuk pola distribusi tidak acak.</p>
       </div>
-    </div>
+    </div> --}}
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
