@@ -75,7 +75,7 @@
                         <tr>
                             <th class="px-4 py-3 font-semibold">Desa</th>
                             <th class="px-4 py-3 font-semibold">Populasi</th>
-                            <th class="px-4 py-3 font-semibold">Stunting</th>
+                            <th class="px-4 py-3 font-semibold">Stunting (%) </th>
                             <th class="px-4 py-3 font-semibold">Faskes Terdekat</th>
                             <th class="px-4 py-3 font-semibold">Cakupan</th>
                             <th class="px-4 py-3 font-semibold">Aksi</th>

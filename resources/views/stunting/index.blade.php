@@ -84,7 +84,7 @@
                             <th class="sticky px-4 py-3 font-semibold">Desa</th>
                             <th class="sticky px-4 py-3 font-semibold">Kasus</th>
                             <th class="sticky px-4 py-3 font-semibold">Populasi</th>
-                            <th class="sticky px-4 py-3 font-semibold">Tingkat</th>
+                            <th class="sticky px-4 py-3 font-semibold">Persentasi</th>
                             <th class="sticky px-4 py-3 font-semibold">Periode</th>
                             @auth
                                 <th class="sticky px-4 py-3 font-semibold">Aksi</th>

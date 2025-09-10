@@ -18,20 +18,16 @@
                 <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
                     <div class="relative flex-1">
                         <input id="search-desa" type="text" placeholder="Cari desa / puskesmas…"
-                               class="w-full rounded-xl border-gray-200 focus:border-red-500 focus:ring-red-500 pl-11">
+                               class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-11">
                         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
                         </svg>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 justify-evenly">
                         <button id="btn-filter-stunting"
                                 class="px-4 py-2 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 ring-1 ring-red-100">
                             Stunting
-                        </button>
-                        <button id="btn-filter-faskes"
-                                class="px-4 py-2 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 ring-1 ring-red-100">
-                            Faskes
                         </button>
                         <a href="{{ route('peta') ?? '#' }}"
                            class="px-4 py-2 rounded-xl bg-red-700 text-white hover:bg-red-800">

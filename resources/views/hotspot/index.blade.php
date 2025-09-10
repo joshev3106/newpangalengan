@@ -34,19 +34,19 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-red-600">
         <div class="text-3xl font-bold text-red-600 mb-1" id="high-confidence">{{ $stats['high'] }}</div>
-        <div class="text-sm text-gray-600">High Confidence (99%)</div>
+        <div class="text-sm text-gray-600">High <br> Confidence (99%)</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-orange-600">
         <div class="text-3xl font-bold text-orange-600 mb-1" id="medium-confidence">{{ $stats['medium'] }}</div>
-        <div class="text-sm text-gray-600">Medium Confidence (95%)</div>
+        <div class="text-sm text-gray-600">Medium <br> Confidence (95%)</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-yellow-500">
         <div class="text-3xl font-bold text-yellow-600 mb-1" id="low-confidence">{{ $stats['low'] }}</div>
-        <div class="text-sm text-gray-600">Low Confidence (90%)</div>
+        <div class="text-sm text-gray-600">Low <br> Confidence (90%)</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-gray-400">
         <div class="text-3xl font-bold text-gray-600 mb-1" id="not-significant">{{ $stats['not'] }}</div>
-        <div class="text-sm text-gray-600">Not Significant</div>
+        <div class="text-sm text-gray-600">Not <br> Significant</div>
       </div>
     </div>
 
@@ -61,6 +61,7 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desa</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kasus</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Persentase <br> Per Populasi </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
             </tr>
           </thead>
@@ -70,6 +71,7 @@
                   $conf = $h['confidence'];
                   $cases = $h['cases'];
                   $desa = $h['desa'];
+                  $rate = $h['rate'];
                   $badge = $conf===99 ? 'bg-red-100 text-red-800'
                          : ($conf===95 ? 'bg-orange-100 text-orange-800'
                          : ($conf===90 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'));
@@ -78,6 +80,7 @@
               <tr>
                 <td class="px-6 py-4">{{ $desa }}</td>
                 <td class="px-6 py-4">{{ $cases }}</td>
+                <td class="px-6 py-4">{{ number_format($rate, 1) }}%</td>
                 <td class="px-6 py-4">
                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badge }}">{{ $label }}</span>
                 </td>
@@ -96,7 +99,7 @@
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
       <div class="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Peta Analisis Hotspot</h2>
-        <div class="flex flex-wrap gap-6 items-center">
+        <div class="flex flex-wrap gap-2 md:gap-6 items-center">
           <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-600"></div><span class="text-sm">99%</span></div>
           <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-orange-600"></div><span class="text-sm">95%</span></div>
           <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-yellow-400"></div><span class="text-sm">90%</span></div>
@@ -132,8 +135,8 @@
             <div class="p-2">
               <strong class="text-gray-800">${h.desa ?? h.name}</strong><br>
               <span class="text-gray-600">
-                Populasi: ${fmt(h.population)}<br>
                 Confidence: ${h.confidence > 0 ? h.confidence + '%' : 'Not Significant'}<br>
+                Populasi: ${fmt(h.population)}<br>
                 Kasus: ${fmt(h.cases)}
               </span>
             </div>
@@ -146,10 +149,10 @@
 
           // heat zone untuk confidence >= 90
           if (h.confidence >= 0) {
-            const r = h.confidence >= 99 ? 800
-                    : h.confidence >= 95 ? 600
-                    : h.confidence >= 90 ? 400
-                    : 250;
+            const r = h.confidence >= 99 ? 600
+                    : h.confidence >= 95 ? 400
+                    : h.confidence >= 90 ? 200
+                    : 150;
             L.circle([h.lat,h.lng], {
               radius: r, fillColor: color, color: color,
               weight: 1, opacity: .3, fillOpacity: .1
