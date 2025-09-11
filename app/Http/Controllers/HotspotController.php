@@ -13,9 +13,19 @@ class HotspotController extends Controller
     // Halaman (publik)
     public function index(Request $request)
     {
-        // buildDataset sekarang mengembalikan [periodUntukView, collection]
-        [$period, $data] = $this->buildDataset($request);
 
+        [$periodRaw, $data] = $this->buildDataset($request);
+
+        // Jika user pilih periode → format ke "MMM 'YY"
+        $periodLabel = $periodRaw ? Carbon::createFromFormat('Y-m', $periodRaw)->isoFormat("MMM 'YY") : null;
+
+        // Ambil periode terakhir global
+        $maxPeriodRaw = Stunting::max('period');
+        $displayPeriodLabel = $maxPeriodRaw ? Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY") : null;
+
+
+
+    
         $stats = [
             'high'   => $data->where('confidence', 99)->count(),
             'medium' => $data->where('confidence', 95)->count(),
@@ -23,21 +33,25 @@ class HotspotController extends Controller
             'not'    => $data->where('confidence', 0)->count(),
             'total'  => $data->count(),
         ];
-
-        // Pagination manual dari collection
+    
+        $base = Stunting::query()->select('stuntings.*');
+    
         $perPage  = 20;
         $page     = max(1, (int) $request->query('page', 1));
         $items    = $data->forPage($page, $perPage)->values();
-        $hotspots = new LengthAwarePaginator(
-            $items,
-            $data->count(),
-            $perPage,
-            $page,
+        $hotspots = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items, $data->count(), $perPage, $page,
             ['path' => url()->current(), 'query' => $request->query()]
         );
-
-        return view('hotspot.index', compact('hotspots', 'stats', 'period'));
+    
+        $rows = $base->orderBy('desa')->paginate($perPage)->withQueryString();
+    
+        
+        return view('hotspot.index', compact(
+            'hotspots', 'stats', 'periodLabel', 'displayPeriodLabel', 'rows'
+        ));
     }
+
 
     // JSON publik (kalau butuh fetch via JS)
     public function data(Request $request)

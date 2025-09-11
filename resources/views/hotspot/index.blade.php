@@ -14,7 +14,7 @@
       </div>
     @endif
 
-    <form method="GET" action="{{ route('hotspot.index') }}" class="mb-4 flex flex-col md:flex-row md:w-md gap-2 items-center">
+    <form method="GET" id="filterForm" action="{{ route('hotspot.index') }}" class="mb-4 flex flex-col md:flex-row md:w-md gap-2 items-center">
       <input type="month" name="period" value="{{ request('period') }}"
              class="rounded-lg w-full border border-gray-300 px-3 py-2">
       <div class="flex gap-2 w-full">
@@ -41,15 +41,17 @@
       </div>
     </div> --}}
 
-    @if (!empty($period))
+    @if (!empty($periodLabel))
       <div class="mb-3 text-sm text-gray-600">
-        Menampilkan data periode: <span class="font-semibold">{{ $period }}</span>
+        Menampilkan data periode: <span class="font-semibold">{{ $periodLabel }}</span>
       </div>
     @else
       <div class="mb-3 text-sm text-gray-600">
-        Menampilkan <span class="font-semibold">data terbaru</span> per desa (periode terakhir yang tersedia).
+        Menampilkan <span class="font-semibold">data terbaru</span>:
+        <span class="font-semibold">{{ $displayPeriodLabel ?? '-' }}</span>.
       </div>
     @endif
+
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -186,12 +188,11 @@
         if (bounds.length) map.fitBounds(bounds,{padding:[20,20]});
       });
 
-      // ---------- Auto submit filter ----------
-      // const f = document.getElementById('filterForm');
-      // const sev = document.getElementById('severity');
-      // const period = document.getElementById('period');
-      // if (f && sev)    sev.addEventListener('change',   () => f.submit());
-      // if (f && period) period.addEventListener('change',() => f.submit());
+      document.addEventListener('DOMContentLoaded', () => {
+        const f = document.getElementById('filterForm');
+        const period = f?.querySelector('input[name="period"]');
+        if (f && period) period.addEventListener('change', () => f.submit());
+      });
     </script>
   @endpush
 </x-layout>

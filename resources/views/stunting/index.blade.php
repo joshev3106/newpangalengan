@@ -44,23 +44,25 @@
               <div class="flex flex-col md:flex-row gap-2">
                 <input type="hidden" name="view" id="viewInput" value="{{ $currentView }}">
   
-                <div class="relative">
-                    <input name="q" id="q" type="text" placeholder="Cari desa …"
-                           value="{{ $q ?? '' }}"
-                           class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-10">
-                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
-                    </svg>
-                </div>
-  
-                <select name="severity" id="severity"
-                        class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
-                    <option value="">Semua tingkat</option>
-                    <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
-                    <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
-                    <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
-                </select>
+                @if ($currentView==='table')
+                  <div class="relative">
+                      <input name="q" id="q" type="text" placeholder="Cari desa …"
+                             value="{{ $q ?? '' }}"
+                             class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-10">
+                      <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
+                      </svg>
+                  </div>
+    
+                  <select name="severity" id="severity"
+                          class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+                      <option value="">Semua tingkat</option>
+                      <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
+                      <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
+                      <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
+                  </select>
+                @endif
 
                 {{-- Satu input month utk pilih periode --}}
                 <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
@@ -82,40 +84,43 @@
         </div>
 
         {{-- Mini navbar (Tabs) --}}
+        @php $q = request()->query(); @endphp
         <div class="mt-3 mb-6">
           <div class="inline-flex rounded-xl bg-gray-100 p-1">
-            <button type="button"
-                    data-tab="table"
-                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium {{ $currentView==='table' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+            <a
+              href="{{ route('stunting.index', array_merge($q, ['view' => 'table'])) }}"
+              class="px-4 py-2 rounded-lg text-sm font-medium {{ ($currentView==='table') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
               📋 Tabel
-            </button>
-            <button type="button"
-                    data-tab="chart"
-                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium {{ $currentView==='chart' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+            </a>
+            <a
+              href="{{ route('stunting.index', array_merge($q, ['view' => 'chart'])) }}"
+              class="px-4 py-2 rounded-lg text-sm font-medium {{ ($currentView==='chart') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
               📈 Grafik
-            </button>
+            </a>
           </div>
         </div>
 
-        @if (!empty($period))
+
+        @if (!empty($periodLabel))
           <div class="mb-3 text-sm text-gray-600">
-            Menampilkan data periode: <span class="font-semibold">{{ $period }}</span>
+            Menampilkan data periode: <span class="font-semibold">{{ $periodLabel }}</span>
           </div>
         @else
           <div class="mb-3 text-sm text-gray-600">
-            Menampilkan <span class="font-semibold">data terbaru</span> per desa (periode terakhir yang tersedia).
+            Menampilkan <span class="font-semibold">data terbaru</span>:
+            <span class="font-semibold">{{ $displayPeriodLabel ?? '-' }}</span>.
           </div>
         @endif
 
         {{-- ===== Tab: CHART ===== --}}
         <section id="tab-chart" class="{{ $currentView==='chart' ? '' : 'hidden' }}">
-          <div class="grid md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4">
+          <div class="flex flex-col md:flex-row gap-2">
+            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
               <h3 class="font-semibold mb-3">Ranking Desa (%)</h3>
               <div class="h-80 md:h-96"><canvas id="rankingChart"></canvas></div>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4">
-              <h3 class="font-semibold mb-3">Tren Rata-rata Bulanan</h3>
+            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
+              <h3 class="font-semibold mb-3">Rata-rata Bulanan Dalam Satu Tahun Kebelakang</h3>
               <div class="h-80 md:h-96"><canvas id="trendChart"></canvas></div>
             </div>
           </div>
@@ -145,7 +150,8 @@
                                   $sevRow = isset($d->severity) ? $d->severity : ($rate > 20 ? 'high' : ($rate >= 10 ? 'medium' : 'low'));
                                   $clr = $sevRow === 'high' ? 'bg-red-600 text-white'
                                       : ($sevRow === 'medium' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white');
-                                  $periodText = \Illuminate\Support\Carbon::parse($d->period)->format('Y-m');
+                                  // ✅ ubah format periode jadi huruf
+                                  $periodText = \Illuminate\Support\Carbon::parse($d->period)->isoFormat("MMM 'YY");
                               @endphp
                               <tr class="hover:bg-gray-50">
                                   <td class="px-4 py-3 font-medium text-gray-800">{{ $d->desa }}</td>
@@ -369,12 +375,12 @@
       setActiveTab(initial);
     });
 
-    // // ---------- Auto submit filter ----------
-    // const f = document.getElementById('filterForm');
-    // const sev = document.getElementById('severity');
-    // const period = document.getElementById('period');
-    // if (f && sev)    sev.addEventListener('change',   () => f.submit());
-    // if (f && period) period.addEventListener('change',() => f.submit());
+    // ---------- Auto submit filter ----------
+    const f = document.getElementById('filterForm');
+    const sev = document.getElementById('severity');
+    const period = document.getElementById('period');
+    if (f && sev)    sev.addEventListener('change',   () => f.submit());
+    if (f && period) period.addEventListener('change',() => f.submit());
 
     const q = document.getElementById('q');
     if (f && q) q.addEventListener('keydown', (e) => {

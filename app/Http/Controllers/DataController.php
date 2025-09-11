@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 class DataController extends Controller
 {
     public function home() {
-        return view('home');
+        return view('home.index');
     }
 
     // public function analisisHotspot() {
@@ -22,7 +22,7 @@ class DataController extends Controller
         $tab = $request->query('tab', 'stunting'); // default ke 'stunting'
         // jaga-jaga kalau value aneh
         if (!in_array($tab, ['stunting','puskesmas'], true)) $tab = 'stunting';
-        return view('peta', compact('tab'));
+        return view('peta.index', compact('tab'));
     }
 
     // public function dataWilayah() {
@@ -30,6 +30,6 @@ class DataController extends Controller
     // }
 
     public function laporan() {
-        return view('laporan');
+        return view('laporan.index');
     }
 }

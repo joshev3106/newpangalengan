@@ -54,8 +54,8 @@ class DataDesa extends Seeder
 
         // ====== SET PERIODE (24 bulan) ======
         // Default: 2024-01-01 s.d. 2025-12-01 (24 bulan)
-        $start  = new DateTime('2024-01-01'); // ubah di sini kalau perlu
-        $months = 24;                         // 24 bulan = 2 tahun
+        $start  = new DateTime('2025-09-01'); // ubah di sini kalau perlu
+        $months = 2;                         // 24 bulan = 2 tahun
 
         $data = [];
 
