@@ -38,6 +38,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/', [DataController::class, 'home'])->name('home');
-Route::get('/analisis-hotspot', [DataController::class, 'analisisHotspot'])->name('analisis-hotspot');
+// Route::get('/analisis-hotspot', [DataController::class, 'analisisHotspot'])->name('analisis-hotspot');
 Route::get('/peta', [DataController::class, 'peta'])->name('peta');
 Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
