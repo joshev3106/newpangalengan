@@ -33,6 +33,7 @@ class PetaController extends Controller
             'markers'  => $markers,
             'period'   => $periodIn,
             'banner'   => $periodLbl,
+            'pkCoords' => config('desa_puskesmas.pk_coords'),
         ]);
     }
 }

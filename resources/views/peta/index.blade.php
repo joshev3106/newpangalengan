@@ -5,7 +5,23 @@
   @endpush
 
   <div class="max-w-7xl mx-auto p-6">
-    <div id="map" class="rounded-2xl overflow-hidden shadow"></div>
+    <div class="mb-6">
+      <!-- List Puskesmas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        @foreach(config('desa_puskesmas.pk_coords') as $nama => $data)
+          @if ($data['tipe'] === 'Induk' || $data['tipe'] === 'Pembantu 1')            
+            <div class="bg-white rounded-2xl p-5 shadow-sm ring-1 ring-gray-100">
+              <h3 class="font-semibold text-lg text-gray-800">{{ $nama }}</h3>
+              <p class="text-sm text-gray-600">Tipe: <span class="font-medium">{{ $data['tipe'] }}</span></p>
+              <p class="text-xs text-gray-500 mt-1">{{ $data['address'] }}</p>
+            </div>
+          @endif
+        @endforeach
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" class="rounded-2xl overflow-hidden shadow-lg"></div>
   </div>
 
   @push('scripts')

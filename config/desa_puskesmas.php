@@ -1,6 +1,6 @@
 <?php
 
-$INDUK = 'RSU Karya Pangalengan Bhakti Sehat (KPBS)';
+$INDUK = 'RSU Karya Pangalengan Bhakti Sehat';
 $PEMBANTU_1 = 'Puskesmas Pangalengan';
 
 
@@ -38,24 +38,32 @@ return [
 
     // === Koordinat: PUSKESMAS → {lat, lng} ===
     'pk_coords' => [
-        'RSU Karya Pangalengan Bhakti Sehat (KPBS)' => [
+        'RSU Karya Pangalengan Bhakti Sehat' => [
             'lat' => -7.176367844945937, 
             'lng' => 107.57284133880104,
+            'tipe' => 'Induk',
             'address' => 'Jl. Raya Pangalengan No.340, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
         ],
 
         'Puskesmas Pangalengan' => [
             'lat' => -7.175820379945676, 
             'lng' => 107.57101437324157,
+            'tipe' => 'Pembantu 1',
             'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
-        ]
+        ],
 
-        // 'Puskemas Marga Hayu' => [
-        //     'lat' => -7.176367844945937, 
-        //     'lng' => 107.57107108087415,
-        //     'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
-        // ],
-        // 'Puskesmas Kertasari' => ['lat' => ..., 'lng' => ...],
-        // dst…
+        'Puskesmas Banjarsari' => [
+            'lat' => -7.175820379945676, 
+            'lng' => 107.57101437324157,
+            'tipe' => 'Pembantu 2',
+            'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
+        ],
+
+        'Puskesmas Sukaluyu' => [
+            'lat' => -7.175820379945676, 
+            'lng' => 107.57101437324157,
+            'tipe' => 'Pembantu 2',
+            'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
+        ],
     ],
 ];
