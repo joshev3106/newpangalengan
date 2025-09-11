@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             PuskesmasSeeder::class,
             DataDesa::class,
-            HotspotSeeder::class,
          ]);
 
         User::factory()->create([

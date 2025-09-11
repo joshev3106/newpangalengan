@@ -149,7 +149,7 @@
 
           const color = h.confidence===99 ? '#dc2626'
                       : h.confidence===95 ? '#ea580c'
-                      : h.confidence===90 ? '#facc15' : '#d1d5dc';
+                      : h.confidence===90 ? '#facc15' : '#16a34a';
 
           const radius = h.confidence>0 ? 15 : 10;
           const opacity = h.confidence>0 ? 0.8 : 0.8;

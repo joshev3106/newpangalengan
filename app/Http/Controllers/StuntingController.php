@@ -77,21 +77,28 @@ class StuntingController extends Controller
         ]);
     }
 
-
     public function create() {
         $defaultPeriod = now()->subMonth()->startOfMonth()->format('Y-m'); // YYYY-MM
-        return view('stunting.create', compact('defaultPeriod'));
+    
+        // Ambil dari config koordinat (master list desa)
+        $desaOptions = array_keys(config('desa_coords', []));
+        sort($desaOptions); // urut A-Z
+    
+        return view('stunting.create', compact('defaultPeriod', 'desaOptions'));
     }
 
     public function store(StoreStuntingRequest $request) {
         $data = $request->validated();
-        $data['period'] = Carbon::createFromFormat('Y-m', $data['period'])->startOfMonth();
         Stunting::create($data);
         return redirect()->route('stunting.index')->with('ok','Data berhasil ditambahkan.');
     }
 
     public function edit(Stunting $stunting) {
-        return view('stunting.edit', compact('stunting'));
+        $desaOptions = array_keys(config('desa_coords', []));
+        sort($desaOptions);
+        $lockDesa = true;
+
+        return view('stunting.edit', compact('stunting', 'desaOptions'));
     }
 
     public function update(StuntingRequest $request, Stunting $stunting)

@@ -15,8 +15,13 @@
 
       <div>
         <label class="block text-sm font-medium mb-1">Desa</label>
-        <input name="desa" value="{{ old('desa') }}" required
-               class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+        <select name="desa" required
+                class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+          <option value="">— Pilih desa —</option>
+          @foreach ($desaOptions as $desa)
+            <option value="{{ $desa }}" @selected(old('desa') === $desa)>{{ $desa }}</option>
+          @endforeach
+        </select>
       </div>
 
       <div>

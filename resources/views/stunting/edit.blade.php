@@ -15,9 +15,29 @@
 
       <div>
         <label class="block text-sm font-medium mb-1">Desa</label>
-        <input name="desa" value="{{ old('desa', $stunting->desa) }}" required
-               class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+
+        {{-- Select desa; jika dikunci, tambahkan hidden agar value tetap terkirim --}}
+        @if(!empty($lockDesa))
+          <input type="hidden" name="desa" value="{{ old('desa', $stunting->desa) }}">
+        @endif
+
+        <select name="{{ !empty($lockDesa) ? 'desa_locked' : 'desa' }}"
+                {{ !empty($lockDesa) ? 'disabled' : '' }}
+                class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+          <option value="">— Pilih desa —</option>
+          @foreach ($desaOptions as $desa)
+            <option value="{{ $desa }}"
+              @selected(old('desa', $stunting->desa) === $desa)>
+              {{ $desa }}
+            </option>
+          @endforeach
+        </select>
+
+        @if(!empty($lockDesa))
+          <p class="text-xs text-gray-500 mt-1">Nama desa dikunci pada halaman edit.</p>
+        @endif
       </div>
+
 
       <div>
         <label class="block text-sm font-medium mb-1">Kasus</label>

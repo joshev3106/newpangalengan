@@ -14,12 +14,12 @@
 
         {{-- Flash message --}}
         @if (session('ok'))
-            <div class="mb-4 rounded-lg bg-green-50 text-green-700 px-4 py-3">
+            <div class="mb-2 rounded-lg bg-green-50 text-green-700 px-4 py-3">
                 {{ session('ok') }}
             </div>
         @endif
         @if ($errors->any())
-            <div class="mb-4 rounded-lg bg-red-50 text-red-700 px-4 py-3">
+            <div class="mb-2 rounded-lg bg-red-50 text-red-700 px-4 py-3">
                 <ul class="list-disc list-inside">
                     @foreach ($errors->all() as $e)
                         <li>{{ $e }}</li>
@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <div class="flex items-center justify-between gap-4 mb-6">
+        <div id="tambahData" class="flex items-center justify-between gap-4 mb-1">
             <div class="flex flex-wrap gap-2">
                 @auth
                     <a href="{{ route('stunting.create') }}"
@@ -386,6 +386,9 @@
     if (f && q) q.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') f.submit();
     });
+
+    const tambahData = document.getElementById('tambahData');
+    
   </script>
 @endpush
 

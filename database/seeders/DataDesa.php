@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use DateTime;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\DesaProfile;
+use App\Support\FaskesResolver;
 
 class DataDesa extends Seeder
 {
@@ -53,9 +55,8 @@ class DataDesa extends Seeder
         ];
 
         // ====== SET PERIODE (24 bulan) ======
-        // Default: 2024-01-01 s.d. 2025-12-01 (24 bulan)
-        $start  = new DateTime('2025-09-01'); // ubah di sini kalau perlu
-        $months = 2;                         // 24 bulan = 2 tahun
+        $start  = new DateTime('2025-01-01'); // ubah di sini kalau perlu
+        $months = 24;                         // 24 bulan = 2 tahun
 
         $data = [];
 
@@ -106,6 +107,20 @@ class DataDesa extends Seeder
             ['desa', 'period'],                  // kunci unik gabungan
             ['kasus', 'populasi', 'updated_at']  // kolom yang di-update jika bentrok
         );
+
+        $desas = collect($data)->pluck('desa')->unique()->values();
+
+        foreach ($desas as $desa) {
+            $profile = DesaProfile::firstOrNew(['desa' => $desa]);
+
+            // isi hanya jika keduanya masih kosong (tidak menimpa data manual)
+            if (empty($profile->puskesmas_id) && empty($profile->faskes_terdekat)) {
+                $res = FaskesResolver::resolveForDesa($desa);
+                $profile->puskesmas_id    = $res['puskesmas_id'];
+                $profile->faskes_terdekat = $res['faskes_text'];
+                $profile->save();
+            }
+        }
     }
 
     /**

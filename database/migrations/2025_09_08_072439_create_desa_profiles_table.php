@@ -9,6 +9,7 @@ return new class extends Migration {
         Schema::create('desa_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('desa', 100)->unique();     // 1 profil per desa
+            $table->string('puskesmas_id', 150)->nullable();
             $table->string('faskes_terdekat', 150)->nullable();
             $table->unsignedTinyInteger('cakupan')->nullable(); // 0..100 (%)
             $table->timestamps();
