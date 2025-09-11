@@ -33,8 +33,8 @@
 
       <div>
         <label class="block text-sm font-medium mb-1">Periode (YYYY-MM)</label>
-        <input type="month" name="period" value="{{ old('period', $defaultPeriod) }}" required
-               class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 hover:cursor-pointer">
+          <input type="month" name="period" value="{{ old('period', $defaultPeriod) }}" required
+                 class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
       </div>
 
       <div class="md:col-span-2 mt-2 flex gap-2">

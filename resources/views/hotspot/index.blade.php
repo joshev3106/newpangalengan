@@ -14,6 +14,17 @@
       </div>
     @endif
 
+    <form method="GET" action="{{ route('hotspot.index') }}" class="mb-4 flex flex-col md:flex-row md:w-md gap-2 items-center">
+      <input type="month" name="period" value="{{ request('period') }}"
+             class="rounded-lg w-full border border-gray-300 px-3 py-2">
+      <div class="flex gap-2 w-full">
+        <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white">Terapkan</button>
+        @if(request()->has('period'))
+          <a href="{{ route('hotspot.index') }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
+        @endif
+      </div>
+    </form>
+
     {{-- Overview Cards --}}
     {{-- <div class="grid md:grid-cols-3 gap-6 mb-6">
       <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
@@ -29,6 +40,16 @@
         <p class="text-gray-600">Clustering spasial untuk pola distribusi tidak acak.</p>
       </div>
     </div> --}}
+
+    @if (!empty($period))
+      <div class="mb-3 text-sm text-gray-600">
+        Menampilkan data periode: <span class="font-semibold">{{ $period }}</span>
+      </div>
+    @else
+      <div class="mb-3 text-sm text-gray-600">
+        Menampilkan <span class="font-semibold">data terbaru</span> per desa (periode terakhir yang tersedia).
+      </div>
+    @endif
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -164,6 +185,13 @@
 
         if (bounds.length) map.fitBounds(bounds,{padding:[20,20]});
       });
+
+      // ---------- Auto submit filter ----------
+      // const f = document.getElementById('filterForm');
+      // const sev = document.getElementById('severity');
+      // const period = document.getElementById('period');
+      // if (f && sev)    sev.addEventListener('change',   () => f.submit());
+      // if (f && period) period.addEventListener('change',() => f.submit());
     </script>
   @endpush
 </x-layout>
