@@ -2,6 +2,9 @@
 
 $INDUK = 'RSU Karya Pangalengan Bhakti Sehat';
 $PEMBANTU_1 = 'Puskesmas Pangalengan';
+$PEMBANTU_2 = 'Puskesmas Banjarsari';
+$PEMBANTU_3 = 'Puskesmas Sukaluyu';
+$PEMBANTU_4 = 'Puskesmas Lamajang';
 
 
 return [
@@ -13,8 +16,8 @@ return [
     'Margamukti'     => $PEMBANTU_1,
     'Margamulya'     => $PEMBANTU_1,
     'Pangalengan'    => $INDUK,
-    'Pulosari'       => $INDUK,
-    'Sukaluyu'       => $INDUK,
+    'Pulosari'       => $PEMBANTU_2,
+    'Sukaluyu'       => $PEMBANTU_3,
     'Sukamanah'      => $INDUK,
     'Tribaktimulya'  => $INDUK,
     'Wanasuka'       => $INDUK,
@@ -28,8 +31,8 @@ return [
         'Margamukti'     => $PEMBANTU_1,
         'Margamulya'     => $PEMBANTU_1,
         'Pangalengan'    => $INDUK,
-        'Pulosari'       => $INDUK,
-        'Sukaluyu'       => $INDUK,
+        'Pulosari'       => $PEMBANTU_2,
+        'Sukaluyu'       => $PEMBANTU_3,
         'Sukamanah'      => $INDUK,
         'Tribaktimulya'  => $INDUK,
         'Wanasuka'       => $INDUK,
@@ -53,16 +56,23 @@ return [
         ],
 
         'Puskesmas Banjarsari' => [
-            'lat' => -7.175820379945676, 
-            'lng' => 107.57101437324157,
+            'lat' => -7.1728540503326935, 
+            'lng' => 107.5706737660332,
             'tipe' => 'Pembantu 2',
             'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
         ],
 
         'Puskesmas Sukaluyu' => [
-            'lat' => -7.175820379945676, 
+            'lat' => -7.177820379945676, 
             'lng' => 107.57101437324157,
-            'tipe' => 'Pembantu 2',
+            'tipe' => 'Pembantu 3',
+            'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
+        ],
+
+        'Puskesmas Lamajang' => [
+            'lat' => -7.177820379945676, 
+            'lng' => 107.57101437324157,
+            'tipe' => 'Pembantu 4',
             'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
         ],
     ],

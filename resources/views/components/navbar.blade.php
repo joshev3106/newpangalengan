@@ -1,7 +1,9 @@
 <div class=" bg-gray-50">
     <!-- Header -->
     @if(request()->routeIs('home'))
-        <x-header></x-header>
+        {{-- resources/views/component/navbar.blade.php --}}
+        <x-header :stats="$stats ?? null" :pk-count="$pkCount ?? null" />
+
     @endif
 
     <!-- Navigation -->
@@ -20,9 +22,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animated-gradient" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7m14 4l-7 7-7-7" />
                 </svg>
-
-
-
             </button>
         
             <!-- Isi Dropdown -->

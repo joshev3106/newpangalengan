@@ -11,11 +11,11 @@
     @vite('resources/css/app.css')
 </head>
 <body>
-    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit'))
+    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit', 'home'))
         <x-navbar></x-navbar>
     @endif
 
-    <div class="p-2">
+    <div>
         {{ $slot }}
     </div>
 

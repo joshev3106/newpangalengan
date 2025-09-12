@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 
 class DataController extends Controller
 {
-    public function home() {
-        return view('home.index');
-    }
+    // public function home() {
+    //     return view('home.index');
+    // }
 
     // public function analisisHotspot() {
     //     return view('analisis-hotspot');

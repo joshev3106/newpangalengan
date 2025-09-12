@@ -7,8 +7,11 @@ use App\Http\Controllers\PetaController;
 use App\Http\Controllers\HotspotController;
 use App\Http\Controllers\WilayahController;
 use App\Http\Controllers\StuntingController;
+use App\Http\Controllers\HomeController;
 
 // Publik bisa lihat daftar
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
 Route::resource('stunting', StuntingController::class)->only(['index']);
 Route::get('/stunting/chart-data', [StuntingController::class, 'chartData'])->name('stunting.chart');
 
@@ -18,6 +21,8 @@ Route::get('/hotspot', [HotspotController::class, 'index'])->name('hotspot.index
 Route::get('/hotspot/data', [HotspotController::class, 'data'])->name('hotspot.data');
 
 Route::get('/peta', [PetaController::class, 'index'])->name('peta');
+
+
 
 Route::middleware('guest')->group( function () {
     // Auth Routes
@@ -37,5 +42,4 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 });
 
-Route::get('/', [DataController::class, 'home'])->name('home');
 Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');

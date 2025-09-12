@@ -14,43 +14,31 @@
       </div>
     @endif
 
-    <form method="GET" id="filterForm" action="{{ route('hotspot.index') }}" class="mb-4 flex flex-col md:flex-row md:w-md gap-2 items-center">
-      <input type="month" name="period" value="{{ request('period') }}"
-             class="rounded-lg w-full border border-gray-300 px-3 py-2">
-      <div class="flex gap-2 w-full">
-        <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white">Terapkan</button>
-        @if(request()->has('period'))
-          <a href="{{ route('hotspot.index') }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
-        @endif
-      </div>
-    </form>
+    <div class="flex md:items-center justify-between mb-4 flex-col-reverse w-full md:flex-row">
+      @if (!empty($periodLabel))
+        <div class="text-sm text-gray-600">
+          Menampilkan data periode: <span class="font-semibold">{{ $periodLabel }}</span>
+        </div>
+      @else
+        <div class="text-sm text-gray-600">
+          Menampilkan <span class="font-semibold">data terbaru</span>:
+          <span class="font-semibold">{{ $displayPeriodLabel ?? '-' }}</span>.
+        </div>
+      @endif
 
-    {{-- Overview Cards --}}
-    {{-- <div class="grid md:grid-cols-3 gap-6 mb-6">
-      <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
-        <h3 class="text-lg font-semibold text-gray-800 mb-3">Analisis Spasial</h3>
-        <p class="text-gray-600">Wilayah dengan konsentrasi tinggi kasus stunting berdasarkan analisis spasial (Getis-Ord Gi*).</p>
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-2 w-full md:w-auto mb-4 md:mb-0">
+        <form method="GET" id="filterForm" action="{{ route('hotspot.index') }}" class="flex flex-col md:flex-row md:w-md gap-2 items-center">
+          <input type="month" name="period" value="{{ request('period') }}"
+                 class="rounded-lg w-full border border-gray-300 px-3 py-2">
+          <div class="flex gap-2 w-full">
+            <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white">Terapkan</button>
+            @if(request()->has('period'))
+              <a href="{{ route('hotspot.index') }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
+            @endif
+          </div>
+        </form>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
-        <h3 class="text-lg font-semibold text-gray-800 mb-3">Hotspot Teridentifikasi</h3>
-        <p class="text-gray-600">Ditemukan <span id="total-hotspots">{{ $stats['total'] }}</span> cluster hotspot.</p>
-      </div>
-      <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-        <h3 class="text-lg font-semibold text-gray-800 mb-3">Metodologi</h3>
-        <p class="text-gray-600">Clustering spasial untuk pola distribusi tidak acak.</p>
-      </div>
-    </div> --}}
-
-    @if (!empty($periodLabel))
-      <div class="mb-3 text-sm text-gray-600">
-        Menampilkan data periode: <span class="font-semibold">{{ $periodLabel }}</span>
-      </div>
-    @else
-      <div class="mb-3 text-sm text-gray-600">
-        Menampilkan <span class="font-semibold">data terbaru</span>:
-        <span class="font-semibold">{{ $displayPeriodLabel ?? '-' }}</span>.
-      </div>
-    @endif
+    </div>
 
 
     {{-- Stats --}}

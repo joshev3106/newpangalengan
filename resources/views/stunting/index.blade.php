@@ -39,13 +39,13 @@
 
         {{-- Filter Bar (server-side) --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-5">
-          <form method="GET" action="{{ route('stunting.index') }}" id="filterForm" class="flex flex-col md:flex-row justify-between gap-3">
+          <form method="GET" action="{{ route('stunting.index') }}" id="filterForm" class="flex flex-col md:flex-row gap-3 justify-between">
               {{-- simpan view aktif agar konsisten setelah submit --}}
-              <div class="flex flex-col md:flex-row gap-2">
+              <div class="flex flex-col md:flex-row gap-2 justify-between w-full">
                 <input type="hidden" name="view" id="viewInput" value="{{ $currentView }}">
   
                 @if ($currentView==='table')
-                  <div class="relative">
+                  <div class="relative w-full">
                       <input name="q" id="q" type="text" placeholder="Cari desa …"
                              value="{{ $q ?? '' }}"
                              class="w-full rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500 pl-10">
@@ -54,48 +54,53 @@
                                 d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/>
                       </svg>
                   </div>
-    
-                  <select name="severity" id="severity"
-                          class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
-                      <option value="">Semua tingkat</option>
-                      <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
-                      <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
-                      <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
-                  </select>
                 @endif
-
-                {{-- Satu input month utk pilih periode --}}
-                <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
-                       class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
-              </div>
-
-
-              <div class="md:col-span-4 flex items-center gap-2 pt-1">
-                  <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white hover:bg-red-500" type="submit">
-                      Terapkan
-                  </button>
-                  @if(request()->has('period'))
-                    <a href="{{ route('stunting.index', ['view' => $currentView]) }}" class="px-4 py-2 w-full text-center rounded-lg bg-gray-100 hover:bg-gray-200">
-                        Reset
-                    </a>
+    
+                <div class="flex gap-2 flex-col md:flex-row">
+                  @if ($currentView==='table')
+                    <select name="severity" id="severity"
+                            class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+                        <option value="">Semua tingkat</option>
+                        <option value="high"   @selected(($sev ?? '') === 'high')>Tinggi (&gt;20%)</option>
+                        <option value="medium" @selected(($sev ?? '') === 'medium')>Sedang (10&ndash;20%)</option>
+                        <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
+                    </select>
                   @endif
+                  
+                  {{-- Satu input month utk pilih periode --}}
+                  <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
+                         class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
+  
+                  <div class="flex items-center gap-2 pt-1">
+                      <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white hover:bg-red-500" type="submit">
+                          Terapkan
+                      </button>
+                      @if(request()->has('period'))
+                        <a href="{{ route('stunting.index', ['view' => $currentView]) }}" class="px-4 py-2 w-full text-center rounded-lg bg-gray-100 hover:bg-gray-200">
+                            Reset
+                        </a>
+                      @endif
+                  </div>
+                </div>
               </div>
+
+
           </form>
         </div>
 
         {{-- Mini navbar (Tabs) --}}
         @php $q = request()->query(); @endphp
-        <div class="mt-3 mb-6">
-          <div class="inline-flex rounded-xl bg-gray-100 p-1">
+        <div class="mt-3 mb-6 w-full">
+          <div class="inline-flex rounded-xl bg-gray-100 p-1 w-full items-center">
             <a
               href="{{ route('stunting.index', array_merge($q, ['view' => 'table'])) }}"
-              class="px-4 py-2 rounded-lg text-sm font-medium {{ ($currentView==='table') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
-              📋 Tabel
+              class="px-4 py-2 w-full text-center rounded-lg text-sm font-medium {{ ($currentView==='table') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+              Tabel
             </a>
             <a
               href="{{ route('stunting.index', array_merge($q, ['view' => 'chart'])) }}"
-              class="px-4 py-2 rounded-lg text-sm font-medium {{ ($currentView==='chart') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
-              📈 Grafik
+              class="px-4 py-2 w-full text-center rounded-lg text-sm font-medium {{ ($currentView==='chart') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+              Chart
             </a>
           </div>
         </div>

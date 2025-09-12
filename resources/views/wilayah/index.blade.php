@@ -14,36 +14,40 @@
         @endif
 
         {{-- Filter: Desa + Rentang Periode --}}
-        <form method="GET" action="{{ route('wilayah.index') }}" id="wilayahFilter"
-              x-data="{ desa: @entangle('desa').defer ?? '{{ request('desa','') }}' }"
-              class="mb-4 flex flex-col md:flex-row gap-2 md:items-center">
-            
-          <input type="text" name="desa" x-model="desa"
-                 placeholder="Ketik nama desa… (wajib untuk pilih rentang)"
-                 class="rounded-lg w-full md:w-64 border border-gray-300 px-3 py-2">
-            
-          <div class="flex gap-2 w-full md:w-auto">
-            <input type="month" name="start" value="{{ request('start') }}"
-                   :disabled="!desa"
-                   class="rounded-lg min-w-1 md:w-full border border-gray-300 px-3 py-2 disabled:bg-gray-100">
-            <span class="self-center text-gray-500">s/d</span>
-            <input type="month" name="end" value="{{ request('end') }}"
-                   :disabled="!desa"
-                   class="rounded-lg min-w-1 md:w-full border border-gray-300 px-3 py-2 disabled:bg-gray-100">
-          </div>
-      
-          <div class="flex gap-2 w-full md:w-auto">
-            <button class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 w-full md:w-auto">
-              Terapkan
-            </button>
-            @if(request()->has('desa') || request()->has('start') || request()->has('end'))
-              <a href="{{ route('wilayah.index') }}"
-                 class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-center w-full md:w-auto">
-                Reset
-              </a>
-            @endif
-          </div>
-        </form>
+        <div class="item-center bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-5 mb-4">
+          <form method="GET" action="{{ route('wilayah.index') }}" id="wilayahFilter"
+                x-data="{ desa: @entangle('desa').defer ?? '{{ request('desa','') }}' }"
+                class="flex flex-col md:flex-row gap-2 md:items-center justify-between">
+              
+            <input type="text" name="desa" x-model="desa"
+                   placeholder="Cari Desa"
+                   class="rounded-lg w-full border border-gray-300 px-3 py-2">
+              
+            <div class="flex flex-col md:flex-row gap-2">
+              <div class="flex gap-1">
+                <input type="month" name="start" value="{{ request('start') }}"
+                       :disabled="!desa"
+                       class="rounded-lg min-w-1 md:w-full border border-gray-300 px-3 py-2 disabled:bg-gray-100">
+                <span class="self-center text-gray-500">s/d</span>
+                <input type="month" name="end" value="{{ request('end') }}"
+                       :disabled="!desa"
+                       class="rounded-lg min-w-1 md:w-full border border-gray-300 px-3 py-2 disabled:bg-gray-100">
+              </div>
+  
+              <div class="flex gap-2 w-full md:w-auto">
+                <button class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 w-full md:w-auto">
+                  Terapkan
+                </button>
+                @if(request()->has('desa') || request()->has('start') || request()->has('end'))
+                  <a href="{{ route('wilayah.index') }}"
+                     class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-center w-full md:w-auto">
+                    Reset
+                  </a>
+                @endif
+              </div>
+            </div>
+          </form>
+        </div>
 
         {{-- Banner periode / default --}}
         @if(!empty($rangeLabel))
@@ -176,19 +180,7 @@
                     </div>
 
                     <div>
-                      <label class="block text-sm font-medium mb-1">Puskesmas</label>
-                      <select name="puskesmas_id" x-model="form.puskesmas_id"
-                              class="w-full rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">— Pilih puskesmas —</option>
-                        @foreach ($puskesmas as $pk)
-                          <option value="{{ $pk->id }}">{{ $pk->nama }}</option>
-                        @endforeach
-                      </select>
-                      <p class="mt-1 text-xs text-gray-500">Kosongkan jika ingin mengetik manual di bawah.</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-sm font-medium mb-1">Faskes (ketik manual, opsional)</label>
+                      <label class="block text-sm font-medium mb-1">Faskes</label>
                       <input type="text" name="faskes" x-model="form.faskes"
                              placeholder="Contoh: Puskesmas Pangalengan"
                              class="w-full rounded-xl p-2 border border-gray-200 focus:border-blue-500 focus:ring-blue-500">
