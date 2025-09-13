@@ -1,10 +1,34 @@
 <x-layout>
   @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <style>#hotspot-map{min-height:400px}@media(min-width:768px){#hotspot-map{min-height:600px}}</style>
+    <style>
+      #hotspot-map{min-height:400px}
+      @media(min-width:768px){#hotspot-map{min-height:600px}}
+      th.sticky { position: sticky; top: 0; background: #fff; z-index: 5; }
+    </style>
   @endpush
 
+  @php
+    $currentView = $currentView ?? request('view','table'); // 'table' | 'map'
+    $qsAll = request()->query();
+
+    // helper url sort + toggle asc/desc
+    $mkSortUrl = function(string $col) use ($qsAll, $sort, $dir) {
+        $nextDir = ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
+        return route('hotspot.index', array_merge($qsAll, [
+            'sort' => $col,
+            'dir'  => $nextDir,
+            'view' => 'table', // pastikan tetap di tab Tabel
+        ]));
+    };
+    $sortArrow = function(string $col) use ($sort, $dir) {
+        if ($sort !== $col) return '';
+        return $dir === 'asc' ? '↑' : '↓';
+    };
+  @endphp
+
   <div class="max-w-7xl mx-auto p-6">
+    {{-- Flash & errors --}}
     @if(session('ok'))
       <div class="mb-4 rounded-lg bg-green-50 text-green-700 px-4 py-3">{{ session('ok') }}</div>
     @endif
@@ -14,6 +38,7 @@
       </div>
     @endif
 
+    {{-- Info periode + Filter --}}
     <div class="flex md:items-center justify-between mb-4 flex-col-reverse w-full md:flex-row">
       @if (!empty($periodLabel))
         <div class="text-sm text-gray-600">
@@ -26,20 +51,22 @@
         </div>
       @endif
 
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-2 w-full md:w-auto mb-4 md:mb-0">
+      <div class="mb-4 bg-transparent rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-0">
         <form method="GET" id="filterForm" action="{{ route('hotspot.index') }}" class="flex flex-col md:flex-row md:w-md gap-2 items-center">
+          <input type="hidden" name="view" value="{{ $currentView }}"> {{-- jaga tab aktif --}}
+          <input type="hidden" name="sort" value="{{ $sort ?? 'desa' }}">
+          <input type="hidden" name="dir"  value="{{ $dir ?? 'asc' }}">
           <input type="month" name="period" value="{{ request('period') }}"
                  class="rounded-lg w-full border border-gray-300 px-3 py-2">
           <div class="flex gap-2 w-full">
             <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white">Terapkan</button>
             @if(request()->has('period'))
-              <a href="{{ route('hotspot.index') }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
+              <a href="{{ route('hotspot.index', ['view' => $currentView, 'sort'=>$sort, 'dir'=>$dir]) }}" class="px-3 py-2 w-full text-center rounded-lg bg-gray-100">Reset</a>
             @endif
           </div>
         </form>
       </div>
     </div>
-
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -61,24 +88,62 @@
       </div>
     </div>
 
-    {{-- Table --}}
-    <div class="bg-white rounded-xl shadow-md mb-6">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-800">Data Hotspot Stunting</h3>
+    {{-- Mini navbar (Tabs) --}}
+    @php $q = request()->query(); @endphp
+    <div class="mt-3 mb-6 w-full">
+      <div class="inline-flex rounded-xl bg-gray-100 p-1 w-full items-center">
+        <a
+          href="{{ route('hotspot.index', array_merge($q, ['view' => 'table'])) }}"
+          class="px-4 py-2 w-full text-center rounded-lg text-sm font-medium {{ ($currentView==='table') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+          Tabel
+        </a>
+        <a
+          href="{{ route('hotspot.index', array_merge($q, ['view' => 'map'])) }}"
+          class="px-4 py-2 w-full text-center rounded-lg text-sm font-medium {{ ($currentView==='map') ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900' }}">
+          Peta
+        </a>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desa</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kasus</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Persentase <br> Per Populasi </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach ($hotspots as $h)
-              @php
+    </div>
+
+    {{-- ===== Tab: TABLE ===== --}}
+    <section id="tab-table" class="{{ $currentView==='table' ? '' : 'hidden' }}">
+      <div class="bg-white rounded-xl shadow-md mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-800">Data Analisis Hotspot</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50">
+              <tr class="text-gray-600 border-b">
+                <th class="sticky px-6 py-3 font-semibold uppercase tracking-wider">
+                  <a href="{{ $mkSortUrl('desa') }}" class="inline-flex items-center gap-1 hover:underline">
+                    Desa <span>{{ $sortArrow('desa') }}</span>
+                  </a>
+                </th>
+                <th class="sticky px-6 py-3 font-semibold uppercase tracking-wider">
+                  <a href="{{ $mkSortUrl('cases') }}" class="inline-flex items-center gap-1 hover:underline">
+                    Kasus <span>{{ $sortArrow('cases') }}</span>
+                  </a>
+                </th>
+                <th class="sticky px-6 py-3 font-semibold uppercase tracking-wider">
+                  <a href="{{ $mkSortUrl('rate') }}" class="inline-flex flex-col items-start gap-1 hover:underline">
+                    <div class="flex gap-1">
+                      <span>Persentase </span>
+                      <span>{{ $sortArrow('rate') }}</span>
+                    </div>
+                    <span class="text-[8px]">(per populasi)</span>
+                  </a>
+                </th>
+                <th class="sticky px-6 py-3 font-semibold uppercase tracking-wider">
+                  <a href="{{ $mkSortUrl('confidence') }}" class="inline-flex items-center gap-1 hover:underline">
+                    Confidence <span>{{ $sortArrow('confidence') }}</span>
+                  </a>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach ($hotspots as $h)
+                @php
                   $conf = $h['confidence'];
                   $cases = $h['cases'];
                   $desa = $h['desa'];
@@ -86,53 +151,66 @@
                   $badge = $conf===99 ? 'bg-red-100 text-red-800'
                          : ($conf===95 ? 'bg-orange-100 text-orange-800'
                          : ($conf===90 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'));
+                  $severity = $rate > 20 ? 'high' : ($rate >= 10 ? 'medium' : 'low'); 
+                  $clr = $severity === 'high' ? 'bg-red-600 text-white'
+                      : ($severity === 'medium' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white');
                   $label = $conf===0 ? 'Not Significant' : $conf.'%';
-              @endphp
-              <tr>
-                <td class="px-6 py-4">{{ $desa }}</td>
-                <td class="px-6 py-4">{{ $cases }}</td>
-                <td class="px-6 py-4">{{ number_format($rate, 1) }}%</td>
-                <td class="px-6 py-4">
+                @endphp
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap">{{ $desa }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">{{ number_format($cases) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full {{ $clr }}">{{ number_format($rate, 1) }}%</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badge }}">{{ $label }}</span>
-                </td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
 
-      <div class="px-6 py-4 border-t text-sm text-gray-600">
-        {{ $hotspots->links('pagination.red') }}
-      </div>
-    </div>
-
-    {{-- Map --}}
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-      <div class="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Peta Analisis Hotspot</h2>
-        <div class="flex flex-wrap gap-2 md:gap-6 items-center">
-          <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-600"></div><span class="text-sm">99%</span></div>
-          <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-orange-600"></div><span class="text-sm">95%</span></div>
-          <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-yellow-400"></div><span class="text-sm">90%</span></div>
-          <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-gray-300"></div><span class="text-sm">Not Sig.</span></div>
+        <div class="px-6 py-4 border-t text-sm text-gray-600">
+          {{ $hotspots->links('pagination.red') }}
         </div>
       </div>
-      <div id="hotspot-map" style="height:600px;width:100%"></div>
-    </div>
+    </section>
+
+    {{-- ===== Tab: MAP ===== --}}
+    <section id="tab-map" class="{{ $currentView==='map' ? '' : 'hidden' }}">
+      <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div class="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Peta Analisis Hotspot</h2>
+          <div class="flex flex-wrap gap-2 md:gap-6 items-center">
+            <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-600"></div><span class="text-sm">99%</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-orange-600"></div><span class="text-sm">95%</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-yellow-400"></div><span class="text-sm">90%</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-gray-300"></div><span class="text-sm">Not Sig.</span></div>
+          </div>
+        </div>
+        <div id="hotspot-map" style="height:600px;width:100%"></div>
+      </div>
+    </section>
   </div>
 
   @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-      const hotspots = @json($hotspots->items());
+      // Dataset lengkap untuk peta (tidak dibatasi pagination)
+      const hotspotsAll = @json($datasetAll ?? []);
       const fmt = (n) => (n ?? 0).toLocaleString('id-ID');
 
       document.addEventListener('DOMContentLoaded', () => {
+        // Inisiasi map hanya jika kontainer ada (tab map aktif)
+        const mapEl = document.getElementById('hotspot-map');
+        if (!mapEl) return;
+
         const map = L.map('hotspot-map').setView([-7.3167,107.5833], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
 
         const bounds = [];
-        hotspots.forEach(h => {
+        hotspotsAll.forEach(h => {
           if (h.lat === null || h.lng === null) return; // skip jika belum ada koordinat
 
           const color = h.confidence===99 ? '#dc2626'
@@ -158,17 +236,15 @@
             radius, fillColor: color, color:'#fff', weight:2, opacity:1, fillOpacity:opacity
           }).addTo(map).bindPopup(popupHtml);
 
-          // heat zone untuk confidence >= 90
-          if (h.confidence >= 0) {
-            const r = h.confidence >= 99 ? 600
-                    : h.confidence >= 95 ? 400
-                    : h.confidence >= 90 ? 200
-                    : 150;
-            L.circle([h.lat,h.lng], {
-              radius: r, fillColor: color, color: color,
-              weight: 1, opacity: .3, fillOpacity: .1
-            }).addTo(map).bindPopup(popupHtml);
-          }
+          // heat zone
+          const r = h.confidence >= 99 ? 600
+                  : h.confidence >= 95 ? 400
+                  : h.confidence >= 90 ? 200
+                  : 150;
+          L.circle([h.lat,h.lng], {
+            radius: r, fillColor: color, color: color,
+            weight: 1, opacity: .3, fillOpacity: .1
+          }).addTo(map).bindPopup(popupHtml);
 
           bounds.push([h.lat,h.lng]);
         });
@@ -176,6 +252,7 @@
         if (bounds.length) map.fitBounds(bounds,{padding:[20,20]});
       });
 
+      // Auto-submit filter saat ganti period
       document.addEventListener('DOMContentLoaded', () => {
         const f = document.getElementById('filterForm');
         const period = f?.querySelector('input[name="period"]');

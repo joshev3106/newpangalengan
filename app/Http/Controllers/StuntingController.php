@@ -20,9 +20,21 @@ class StuntingController extends Controller
         $periodM = $req->input('period');   // 'YYYY-MM' atau null
         $perPage = (int) $req->input('per_page', 20);
     
+        // === NEW: sorting params ===
+        $sort = $req->input('sort', 'desa');             // desa|kasus|populasi|rate
+        $dir  = strtolower($req->input('dir', 'asc'));   // asc|desc
+        $dir  = in_array($dir, ['asc','desc'], true) ? $dir : 'asc';
+    
+        // amankan kolom sort
+        $allowedSorts = ['desa','kasus','populasi','rate'];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'desa';
+        }
+    
         $rateExpr = "(CASE WHEN stuntings.populasi = 0 THEN 0 ELSE (stuntings.kasus * 100.0) / stuntings.populasi END)";
         $base = Stunting::query()->select('stuntings.*');
     
+        // filter periode
         if ($periodM) {
             try {
                 $periodDate = \Illuminate\Support\Carbon::parse($periodM.'-01')->startOfMonth()->format('Y-m-d');
@@ -43,10 +55,12 @@ class StuntingController extends Controller
             });
         }
     
+        // filter q
         if ($q !== '') {
             $base->where('stuntings.desa', 'LIKE', '%'.$q.'%');
         }
     
+        // filter severity
         if ($sev === 'high') {
             $base->whereRaw("$rateExpr > 20");
         } elseif ($sev === 'medium') {
@@ -55,14 +69,24 @@ class StuntingController extends Controller
             $base->whereRaw("$rateExpr < 10");
         }
     
-        $rows = $base->orderBy('stuntings.desa')->paginate($perPage)->withQueryString();
+        // === NEW: apply sort ===
+        if ($sort === 'rate') {
+            $base->orderByRaw("$rateExpr $dir");
+            // biar stabil kalau rate sama
+            $base->orderBy('stuntings.desa', 'asc');
+        } else {
+            $base->orderBy("stuntings.$sort", $dir)
+                 ->orderBy('stuntings.desa', 'asc'); // tie-breaker
+        }
     
-        // === Tambahan: label periode ===
+        $rows = $base->paginate($perPage)->withQueryString();
+    
+        // label periode
         $periodLabel = $periodM
             ? \Illuminate\Support\Carbon::createFromFormat('Y-m', $periodM)->isoFormat("MMM 'YY")
             : null;
     
-        $maxPeriodRaw = Stunting::max('period'); // global max dari tabel
+        $maxPeriodRaw = Stunting::max('period');
         $displayPeriodLabel = $maxPeriodRaw
             ? \Illuminate\Support\Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY")
             : null;
@@ -71,11 +95,16 @@ class StuntingController extends Controller
             'rows'                => $rows,
             'q'                   => $q,
             'sev'                 => $sev,
-            'period'              => $periodM,          // tetap untuk value <input type="month">
-            'periodLabel'         => $periodLabel,      // NEW
-            'displayPeriodLabel'  => $displayPeriodLabel, // NEW
+            'period'              => $periodM,
+            'periodLabel'         => $periodLabel,
+            'displayPeriodLabel'  => $displayPeriodLabel,
+        
+            // === NEW: kirim ke view untuk indikator panah
+            'sort'                => $sort,
+            'dir'                 => $dir,
         ]);
     }
+
 
     public function create() {
         $defaultPeriod = now()->subMonth()->startOfMonth()->format('Y-m'); // YYYY-MM

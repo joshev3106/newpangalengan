@@ -43,6 +43,7 @@
           const popup = `
             <div class="p-1">
               <div class="font-semibold text-gray-800">${m.puskesmas}</div>
+              <div class="text-gray-800 text-xs">Tipe: ${m.tipe ?? '-'}</div>
               <div class="text-gray-800 text-sm">${m.address ?? '-'}</div>
               <div class="mt-1">
                 <a href="https://www.google.com/maps?q=${m.lat},${m.lng}" target="_blank" rel="noopener"

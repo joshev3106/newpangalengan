@@ -25,7 +25,8 @@ class PetaController extends Controller
                 'puskesmas' => $pkName,
                 'lat'       => $coord['lat'] ?? null,
                 'lng'       => $coord['lng'] ?? null,
-                'address'       => $coord['address'] ?? null,
+                'address'   => $coord['address'] ?? null,
+                'tipe'      => $coord['tipe'] ?? null,
             ];
         })->values();
 

@@ -14,10 +14,19 @@ class WilayahController extends Controller
 {
     public function index(Request $request)
     {
-    
         $desaInput = trim((string) $request->query('desa', ''));
         $startM = trim((string) $request->query('start', ''));
         $endM   = trim((string) $request->query('end', ''));
+
+        // === NEW: Sorting params ===
+        $sort = $request->query('sort', 'desa');            // 'desa'|'populasi'|'rate'|'faskes_nama'|'cakupan'
+        $dir  = strtolower($request->query('dir', 'asc'));  // 'asc'|'desc'
+        $dir  = in_array($dir, ['asc','desc'], true) ? $dir : 'asc';
+
+        $allowed = ['desa','populasi','rate','faskes_nama','cakupan'];
+        if (!in_array($sort, $allowed, true)) $sort = 'desa';
+
+        $rateExpr = "(CASE WHEN stuntings.populasi = 0 THEN 0 ELSE (stuntings.kasus * 100.0) / stuntings.populasi END)";
 
         // Normalisasi YYYY-MM → YYYY-MM-01 / endOfMonth
         $startDate = null; $endDate = null;
@@ -27,7 +36,7 @@ class WilayahController extends Controller
         // Jika user isi rentang tapi belum isi desa → tolak
         if (($startDate || $endDate) && $desaInput === '') {
             return back()->withErrors(['desa' => 'Silakan isi nama desa terlebih dahulu untuk menelusuri rentang periode.'])
-                         ->withInput();
+                        ->withInput();
         }
 
         // Label range (untuk banner)
@@ -38,16 +47,15 @@ class WilayahController extends Controller
             $rangeLabel = $sLabel.' – '.$eLabel;
         }
 
-        // MODE A: Desa + Range → tampilkan daftar per-periode untuk desa itu
+        // MODE A: Desa + Range → daftar per-periode untuk desa tsb
         if ($desaInput !== '' && ($startDate || $endDate)) {
-            $rows = Stunting::query()
+            $base = Stunting::query()
                 ->where('stuntings.desa', 'like', '%'.$desaInput.'%')
                 ->when($startDate, fn($q) => $q->whereDate('stuntings.period', '>=', $startDate))
                 ->when($endDate,   fn($q) => $q->whereDate('stuntings.period', '<=', $endDate))
                 ->leftJoin('desa_profiles as dp', 'stuntings.desa', '=', 'dp.desa')
                 ->leftJoin('puskesmas as pk', 'dp.puskesmas_id', '=', 'pk.id')
-                ->orderBy('stuntings.desa')->orderBy('stuntings.period')
-                ->get([
+                ->select([
                     'stuntings.desa',
                     'stuntings.populasi',
                     'stuntings.kasus',
@@ -56,6 +64,28 @@ class WilayahController extends Controller
                     'dp.puskesmas_id',
                     DB::raw('COALESCE(pk.nama, dp.faskes_terdekat, "") as faskes_nama'),
                 ]);
+
+            // === NEW: apply sorting (MODE A)
+            switch ($sort) {
+                case 'populasi':
+                    $base->orderBy('stuntings.populasi', $dir)->orderBy('stuntings.desa');
+                    break;
+                case 'rate':
+                    $base->orderByRaw("$rateExpr $dir")->orderBy('stuntings.desa');
+                    break;
+                case 'faskes_nama':
+                    $base->orderBy('faskes_nama', $dir)->orderBy('stuntings.desa');
+                    break;
+                case 'cakupan':
+                    $base->orderBy('dp.cakupan', $dir)->orderBy('stuntings.desa');
+                    break;
+                case 'desa':
+                default:
+                    $base->orderBy('stuntings.desa', $dir)->orderBy('stuntings.period', 'asc');
+                    break;
+            }
+
+            $rows = $base->get();
 
             // Update terakhir & avg rate di rentang
             $maxPeriodRaw = Stunting::query()
@@ -81,48 +111,66 @@ class WilayahController extends Controller
 
             $puskesmas = Puskesmas::orderBy('nama')->get(['id','nama']);
 
-            // displayPeriodLabel (untuk “data terbaru”) tidak relevan di mode range
             $displayPeriodLabel = null;
             $desa = $desaInput;
 
             return view('wilayah.index', compact(
-                'rows','puskesmas','rangeLabel','lastUpdateLabel','avgRatePage','desa','displayPeriodLabel'
+                'rows','puskesmas','rangeLabel','lastUpdateLabel','avgRatePage','desa','displayPeriodLabel',
+                // NEW
+                'sort','dir'
             ));
         }
 
         // MODE B: Tanpa range → data terbaru per desa (default)
-        $latest = Stunting::select('desa', DB::raw('MAX(period) as last_period'))
-            ->groupBy('desa');
+        $latest = Stunting::select('desa', DB::raw('MAX(period) as last_period'))->groupBy('desa');
 
         $base = Stunting::joinSub($latest,'latest',function($j){
                     $j->on('stuntings.desa','=','latest.desa')
-                      ->on('stuntings.period','=','latest.last_period');
+                    ->on('stuntings.period','=','latest.last_period');
                 })
                 ->leftJoin('desa_profiles as dp', 'stuntings.desa', '=', 'dp.desa')
-                ->leftJoin('puskesmas as pk', 'dp.puskesmas_id', '=', 'pk.id');
+                ->leftJoin('puskesmas as pk', 'dp.puskesmas_id', '=', 'pk.id')
+                ->select([
+                    'stuntings.desa',
+                    'stuntings.populasi',
+                    'stuntings.kasus',
+                    'stuntings.period',
+                    'dp.cakupan',
+                    'dp.puskesmas_id',
+                    DB::raw('COALESCE(pk.nama, dp.faskes_terdekat, "") as faskes_nama'),
+                ]);
 
-        // optional: kalau desa diisi TANPA range → filter ke desa tsb tapi tetap ambil terbaru
         if ($desaInput !== '') {
             $base->where('stuntings.desa','like','%'.$desaInput.'%');
         }
 
-        $rows = $base->orderBy('stuntings.desa')
-            ->get([
-                'stuntings.desa',
-                'stuntings.populasi',
-                'stuntings.kasus',
-                'stuntings.period',
-                'dp.cakupan',
-                'dp.puskesmas_id',
-                DB::raw('COALESCE(pk.nama, dp.faskes_terdekat, "") as faskes_nama'),
-            ]);
+        // === NEW: apply sorting (MODE B)
+        switch ($sort) {
+            case 'populasi':
+                $base->orderBy('stuntings.populasi', $dir)->orderBy('stuntings.desa');
+                break;
+            case 'rate':
+                $base->orderByRaw("$rateExpr $dir")->orderBy('stuntings.desa');
+                break;
+            case 'faskes_nama':
+                $base->orderBy('faskes_nama', $dir)->orderBy('stuntings.desa');
+                break;
+            case 'cakupan':
+                $base->orderBy('dp.cakupan', $dir)->orderBy('stuntings.desa');
+                break;
+            case 'desa':
+            default:
+                $base->orderBy('stuntings.desa', $dir);
+                break;
+        }
+
+        $rows = $base->get();
 
         // Kartu ringkas (global terbaru)
         $maxPeriodRaw = Stunting::max('period');
         $lastUpdateLabel = $maxPeriodRaw ? Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY") : null;
         $displayPeriodLabel = $lastUpdateLabel;
 
-        // avg rate global terbaru per bulan (opsional tetap, boleh seperti sebelumnya)
         $trendRows = Stunting::selectRaw("DATE_FORMAT(period,'%Y-%m') as ym")
             ->selectRaw("SUM(kasus) as kasus, SUM(populasi) as pop")
             ->groupBy('ym')->orderBy('ym')->get();
@@ -134,10 +182,11 @@ class WilayahController extends Controller
         $desa = $desaInput ?: null;
 
         return view('wilayah.index', compact(
-            'rows','puskesmas','rangeLabel','displayPeriodLabel','lastUpdateLabel','avgRatePage','desa'
+            'rows','puskesmas','rangeLabel','displayPeriodLabel','lastUpdateLabel','avgRatePage','desa',
+            // NEW
+            'sort','dir'
         ));
     }
-
 
     public function upsert(Request $request)
     {

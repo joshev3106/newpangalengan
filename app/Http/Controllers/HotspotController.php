@@ -13,19 +13,35 @@ class HotspotController extends Controller
     // Halaman (publik)
     public function index(Request $request)
     {
-
         [$periodRaw, $data] = $this->buildDataset($request);
 
-        // Jika user pilih periode → format ke "MMM 'YY"
+        // Label periode
         $periodLabel = $periodRaw ? Carbon::createFromFormat('Y-m', $periodRaw)->isoFormat("MMM 'YY") : null;
-
-        // Ambil periode terakhir global
         $maxPeriodRaw = Stunting::max('period');
         $displayPeriodLabel = $maxPeriodRaw ? Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY") : null;
 
+        // === NEW: Tab view (table|map) ===
+        $currentView = $request->query('view', 'table');
+        if (!in_array($currentView, ['table','map'], true)) $currentView = 'table';
 
+        // === NEW: Sorting (desa|cases|rate|confidence) & dir (asc|desc) ===
+        $sort = $request->query('sort', 'desa');
+        $dir  = strtolower($request->query('dir', 'asc'));
+        $dir  = in_array($dir, ['asc','desc'], true) ? $dir : 'asc';
 
-    
+        $allowedSorts = ['desa','cases','rate','confidence'];
+        if (!in_array($sort, $allowedSorts, true)) $sort = 'desa';
+
+        // Terapkan sort ke collection $data (collection of arrays)
+        $data = $data->sortBy(function ($item) use ($sort) {
+            if ($sort === 'desa') {
+                return mb_strtolower($item['desa'] ?? '');
+            }
+            // numeric
+            return $item[$sort] ?? 0;
+        }, SORT_REGULAR, $dir === 'desc')->values();
+
+        // Stats
         $stats = [
             'high'   => $data->where('confidence', 99)->count(),
             'medium' => $data->where('confidence', 95)->count(),
@@ -33,25 +49,35 @@ class HotspotController extends Controller
             'not'    => $data->where('confidence', 0)->count(),
             'total'  => $data->count(),
         ];
-    
-        $base = Stunting::query()->select('stuntings.*');
-    
-        $perPage  = 20;
+
+        // Pagination untuk TAB TABLE saja (dataset lengkap tetap dipakai untuk Map)
+        $perPage  = (int) $request->query('per_page', 20);
+        $perPage  = $perPage > 0 ? $perPage : 20;
         $page     = max(1, (int) $request->query('page', 1));
+
         $items    = $data->forPage($page, $perPage)->values();
-        $hotspots = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $data->count(), $perPage, $page,
+        $hotspots = new LengthAwarePaginator(
+            $items,
+            $data->count(),
+            $perPage,
+            $page,
             ['path' => url()->current(), 'query' => $request->query()]
         );
-    
-        $rows = $base->orderBy('desa')->paginate($perPage)->withQueryString();
-    
-        
+
+        // Dataset penuh untuk peta (semua titik, tidak terbatasi pagination)
+        $datasetAll = $data->values();
+
         return view('hotspot.index', compact(
-            'hotspots', 'stats', 'periodLabel', 'displayPeriodLabel', 'rows'
+            'hotspots',
+            'datasetAll',
+            'stats',
+            'periodLabel',
+            'displayPeriodLabel',
+            'currentView',
+            'sort',
+            'dir'
         ));
     }
-
 
     // JSON publik (kalau butuh fetch via JS)
     public function data(Request $request)

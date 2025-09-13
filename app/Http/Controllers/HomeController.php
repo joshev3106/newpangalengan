@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stunting;
-use App\Models\Puskesmas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -25,7 +24,6 @@ class HomeController extends Controller
 
         // ===== Ambil rows sesuai periode =====
         if ($periodDate) {
-            // Periode spesifik
             $rows = Stunting::query()
                 ->whereDate('period', $periodDate->toDateString())
                 ->select(['desa','kasus','populasi','period'])
@@ -34,7 +32,6 @@ class HomeController extends Controller
 
             $displayPeriodLabel = $periodDate->isoFormat("MMM 'YY");
         } else {
-            // Data terbaru per desa (MAX(period) per desa)
             $latest = Stunting::select('desa', DB::raw('MAX(period) as period'))->groupBy('desa');
 
             $rows = Stunting::joinSub($latest, 'latest', function ($join) {
@@ -72,20 +69,22 @@ class HomeController extends Controller
             'avg'    => round($withRate->avg(fn($x) => $x->rate) ?? 0, 1),
         ];
 
-        // Top 5 desa berdasar rate (opsional untuk home)
         $top5 = $withRate->sortByDesc('rate')->take(5)->values();
 
-        // Hitung jumlah puskesmas (fallback ke config jika tabel belum ada)
-        // try {
-        //     $pkCount = Puskesmas::count();
-        // } catch (\Throwable $e) {
-        //     $pkCount = count(config('desa_puskesmas.pk_coords', []));
-        // }
-        
-        $pkCount = count(config('desa_puskesmas.pk_coords', []));
-
-        // Badge tambahan (opsional)
+        $pkCount         = count(config('desa_puskesmas.pk_coords', []));
         $desaMappedCount = count(config('desa_puskesmas.desa_to_pk', []));
+
+        // ⬇️ markers peta faskes
+        $pkCoords  = config('desa_puskesmas.pk_coords', []);
+        $pkMarkers = collect($pkCoords)->map(function ($coord, $name) {
+            return [
+                'puskesmas' => $name,
+                'lat'       => $coord['lat'] ?? null,
+                'lng'       => $coord['lng'] ?? null,
+                'address'   => $coord['address'] ?? null,
+                'tipe'      => $coord['tipe'] ?? null,
+            ];
+        })->values();
 
         return view('home.index', [
             'period'              => $periodM,
@@ -95,6 +94,7 @@ class HomeController extends Controller
             'top5'                => $top5,
             'pkCount'             => $pkCount,
             'desaMappedCount'     => $desaMappedCount,
+            'pkMarkers'           => $pkMarkers, // ⬅️ kirim ke blade
         ]);
     }
 }

@@ -88,22 +88,62 @@
             </div>
         </div>
 
+        @php
+          // semua query saat ini supaya filter (desa, start, end) tetap terbawa
+          $qsAll = request()->query();
+
+          // buat URL sort + toggle asc/desc
+          $mkSortUrl = function(string $col) use ($qsAll, $sort, $dir) {
+              $nextDir = ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
+              return route('wilayah.index', array_merge($qsAll, [
+                  'sort' => $col,
+                  'dir'  => $nextDir,
+              ]));
+          };
+        
+          // ikon panah arah sort
+          $sortArrow = function(string $col) use ($sort, $dir) {
+              if ($sort !== $col) return '';
+              return $dir === 'asc' ? '↑' : '↓';
+          };
+        @endphp
+
         {{-- Daftar Wilayah --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
             <div class="overflow-auto">
                 <table class="min-w-full text-left text-sm">
                     <thead class="text-gray-600 border-b">
-                        <tr>
-                            <th class="px-4 py-3 font-semibold">Desa</th>
-                            <th class="px-4 py-3 font-semibold">Populasi</th>
-                            <th class="px-4 py-3 font-semibold">Stunting (%) </th>
-                            @if(!empty($rangeLabel))
-                              <th class="px-4 py-3 font-semibold">Periode</th>
-                            @endif
-                            <th class="px-4 py-3 font-semibold">Faskes Terdekat</th>
-                            <th class="px-4 py-3 font-semibold">Cakupan</th>
-                            <th class="px-4 py-3 font-semibold">Aksi</th>
-                        </tr>
+                      <tr>
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">
+                          <a href="{{ $mkSortUrl('desa') }}" class="inline-flex items-center gap-1 hover:underline">
+                            Desa <span>{{ $sortArrow('desa') }}</span>
+                          </a>
+                        </th>
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">
+                          <a href="{{ $mkSortUrl('populasi') }}" class="inline-flex items-center gap-1 hover:underline">
+                            Populasi <span>{{ $sortArrow('populasi') }}</span>
+                          </a>
+                        </th>
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">
+                          <a href="{{ $mkSortUrl('rate') }}" class="inline-flex items-center gap-1 hover:underline">
+                            Stunting <span class="text-xs normal-case">(%)</span> <span>{{ $sortArrow('rate') }}</span>
+                          </a>
+                        </th>
+                        @if(!empty($rangeLabel))
+                          <th class="px-4 py-3 font-semibold uppercase tracking-wider">Periode</th>
+                        @endif
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">
+                          <a href="{{ $mkSortUrl('faskes_nama') }}" class="inline-flex items-center gap-1 hover:underline">
+                            Faskes Terdekat <span>{{ $sortArrow('faskes_nama') }}</span>
+                          </a>
+                        </th>
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">
+                          <a href="{{ $mkSortUrl('cakupan') }}" class="inline-flex items-center gap-1 hover:underline">
+                            Cakupan <span>{{ $sortArrow('cakupan') }}</span>
+                          </a>
+                        </th>
+                        <th class="px-4 py-3 font-semibold uppercase tracking-wider">Aksi</th>
+                      </tr>
                     </thead>
                     <tbody id="wilRows" class="divide-y">
                         @forelse ($rows as $r)
