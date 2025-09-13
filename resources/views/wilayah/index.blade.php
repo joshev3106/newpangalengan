@@ -64,7 +64,7 @@
 
         {{-- Cards --}}
         @php
-          // Rata-rata cakupan dengan rumus baru: served/kasus*100 (abaikan jika served null atau kasus <= 0)
+          // Cakupan (avg) -> dari served/kasus * 100 per baris; abaikan jika tak bisa dihitung.
           $covValues = collect($rows)->map(function($r){
               $served = isset($r->served_calc) ? (int) round($r->served_calc) : null;
               if ($served === null || (int)$r->kasus <= 0) return null;
@@ -73,7 +73,9 @@
           })->filter(fn($v) => $v !== null);
 
           $avgCov = $covValues->count() ? round($covValues->avg(), 1) : null;
-          $avgRate = $rows->avg(function($r){ return $r->populasi>0 ? ($r->kasus/$r->populasi*100) : 0; });
+
+          // Rata-rata stunting (tertimbang) sudah dihitung di controller → $avgRatePage
+          $avgRate = $avgRatePage ?? 0.0;
         @endphp
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -137,9 +139,8 @@
                           </a>
                         </th>
 
-                        {{-- NEW: Kasus --}}
+                        {{-- Kasus --}}
                         <th class="px-4 py-3 font-semibold uppercase tracking-wider">
-                          {{-- NOTE: agar bisa sort by 'kasus', tambahkan dukungan 'kasus' di WilayahController --}}
                           <a href="{{ $mkSortUrl('kasus') }}" class="inline-flex items-center gap-1 hover:underline">
                             Kasus <span>{{ $sortArrow('kasus') }}</span>
                           </a>
@@ -170,7 +171,6 @@
 
                         {{-- Cakupan (%) = served/kasus * 100 --}}
                         <th class="px-4 py-3 font-semibold uppercase tracking-wider">
-                          {{-- NOTE: jika ingin sort by cakupan baru, update controller agar sort berdasar (served/kasus) --}}
                           <a href="{{ $mkSortUrl('cakupan') }}" class="inline-flex items-center gap-1 hover:underline">
                             Cakupan <span>{{ $sortArrow('cakupan') }}</span>
                           </a>
@@ -191,51 +191,44 @@
                                 // served_calc: dari controller (dp.served atau estimasi). Bisa null.
                                 $servedVal = $r->served_calc !== null ? (int) round($r->served_calc) : null;
 
-                                // Cakupan baru: served/kasus * 100 (batasi 0..100). Tampilkan '—' jika tidak bisa dihitung.
+                                // Cakupan baru: served/kasus * 100
                                 if ($servedVal !== null && (int)$r->kasus > 0) {
                                     $covPct = max(0, min(100, round(($servedVal / max(1,(int)$r->kasus)) * 100, 1)));
                                 } else {
                                     $covPct = null;
                                 }
+
+                                $covRow = $covPct > 50 ? 'high' : ($rate >= 20 ? 'medium' : 'low');
+                                $clrCov = $covRow=='high'?'bg-green-500 text-white':($covRow=='medium'?'bg-orange-500 text-white':'bg-red-500 text-white');
                             @endphp
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 font-medium text-gray-800">{{ $r->desa }}</td>
                                 <td class="px-4 py-3">{{ number_format($r->populasi) }}</td>
-
-                                {{-- NEW: Kasus --}}
                                 <td class="px-4 py-3">{{ number_format($r->kasus) }}</td>
-
                                 <td class="px-4 py-3">
                                     <span class="px-2 py-1 rounded-lg text-xs font-semibold {{ $clr }}">
                                         {{ number_format($rate,1) }}%
                                     </span>
                                 </td>
-
                                 @if(!empty($rangeLabel))
                                   <td class="px-4 py-3">{{ $periodText }}</td>
                                 @endif
-
                                 <td class="px-4 py-3">{{ $r->faskes_nama ?: '—' }}</td>
-
-                                {{-- Pasien Dilayani --}}
                                 <td class="px-4 py-3">
                                   {{ $servedVal !== null ? number_format($servedVal) : '—' }}
                                 </td>
-
-                                {{-- Cakupan (%) dari served/kasus --}}
                                 <td class="px-4 py-3">
-                                  {{ $covPct !== null ? number_format($covPct,1).'%' : '—' }}
+                                  <span class="px-2 py-1 rounded-lg text-xs font-semibold {{ $clrCov }}">
+                                    {{ $covPct !== null ? number_format($covPct,1).'%' : '—' }}
+                                  </span>
                                 </td>
-
                                 <td class="px-4 py-3">
                                     <div class="flex gap-2">
-                                        {{-- Tombol LIHAT PETA: buka modal & popup pada faskes sesuai config --}}
                                         <a href="javascript:void(0)"
                                            @click="showMap('{{ e($r->desa) }}')"
                                            class="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 hover:cursor-pointer">
                                             Lihat Peta
                                         </a>
-
                                         @auth
                                           <a href="{{ route('wilayah.edit', ['desa' => $r->desa]) }}"
                                              class="px-3 py-1.5 rounded-lg bg-white ring-1 ring-gray-200 hover:bg-gray-50 hover:cursor-pointer">
@@ -245,7 +238,6 @@
                                     </div>
                                 </td>
                             </tr>
-
                         @empty
                             <tr>
                                 <td colspan="9" class="px-4 py-6 text-center text-gray-500">
@@ -291,13 +283,11 @@
 
         function wilayahPage() {
           return {
-            // --- state peta ---
             mapOpen:false,
             mapTitle:'Peta Faskes',
             _leaflet:null,
             _marker:null,
 
-            // ====== PETA: buka modal & tampilkan popup faskes utk desa ======
             showMap(desa) {
               const pkName = DESA_TO_PK[desa] || null;
               if (!pkName) {
@@ -314,7 +304,6 @@
               this.mapOpen = true;
 
               this.$nextTick(() => {
-                // reset instance lama agar tidak dobel
                 if (this._leaflet) { this._leaflet.remove(); this._leaflet = null; this._marker = null; }
 
                 this._leaflet = L.map('miniMap').setView([coord.lat, coord.lng], 14);
@@ -324,7 +313,7 @@
 
                 this._marker = L.marker([coord.lat, coord.lng]).addTo(this._leaflet);
 
-                const addr = (coord.address ?? ''); // opsional: jika ada 'address' di config
+                const addr = (coord.address ?? '');
                 const popupHtml = `<strong>${pkName}</strong>${addr ? '<br><small>'+addr+'</small>' : ''}`;
                 this._marker.bindPopup(popupHtml).openPopup();
               });

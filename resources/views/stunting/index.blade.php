@@ -40,10 +40,9 @@
         {{-- Filter Bar (server-side) --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 md:p-5">
           <form method="GET" action="{{ route('stunting.index') }}" id="filterForm" class="flex flex-col md:flex-row gap-3 justify-between">
-              {{-- simpan view aktif agar konsisten setelah submit --}}
               <div class="flex flex-col md:flex-row gap-2 justify-between w-full">
                 <input type="hidden" name="view" id="viewInput" value="{{ $currentView }}">
-  
+
                 @if ($currentView==='table')
                   <div class="relative w-full">
                       <input name="q" id="q" type="text" placeholder="Cari desa …"
@@ -55,7 +54,7 @@
                       </svg>
                   </div>
                 @endif
-    
+
                 <div class="flex gap-2 flex-col md:flex-row">
                   @if ($currentView==='table')
                     <select name="severity" id="severity"
@@ -66,11 +65,10 @@
                         <option value="low"    @selected(($sev ?? '') === 'low')>Rendah (&lt;10%)</option>
                     </select>
                   @endif
-                  
-                  {{-- Satu input month utk pilih periode --}}
+
                   <input name="period" id="period" type="month" value="{{ $period ?? '' }}"
                          class="rounded-xl p-2 border border-gray-200 focus:border-red-500 focus:ring-red-500">
-  
+
                   <div class="flex items-center gap-2 pt-1">
                       <button class="px-4 py-2 rounded-lg hover:cursor-pointer w-full bg-red-600 text-white hover:bg-red-500" type="submit">
                           Terapkan
@@ -83,8 +81,6 @@
                   </div>
                 </div>
               </div>
-
-
           </form>
         </div>
 
@@ -105,7 +101,6 @@
           </div>
         </div>
 
-
         @if (!empty($periodLabel))
           <div class="mb-3 text-sm text-gray-600">
             Menampilkan data periode: <span class="font-semibold">{{ $periodLabel }}</span>
@@ -119,32 +114,77 @@
 
         {{-- ===== Tab: CHART ===== --}}
         <section id="tab-chart" class="{{ $currentView==='chart' ? '' : 'hidden' }}">
+          <div class="bg-white rounded-t-2xl w-full shadow-sm ring-1 ring-gray-100 p-4 border-b border-gray-200 flex justify-between">
+            <div>
+              <h1 class="text-lg font-semibold text-gray-800">Chart Data Stunting</h1>
+            </div>
+            <div id="modalKeterangan">
+              <button id="openModalBtnChart" class="flex items-center p-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 hover:cursor-pointer focus:ring-offset-2 transition-colors duration-200">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+              </button>
+              <div id="modalOverlayChart" class="fixed inset-0 bg-opacity-50 z-50 hidden">
+                  <div class="flex items-center justify-center min-h-screen p-4">
+                      <div class="bg-white rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContentChart">
+                          <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                              <h3 class="text-lg font-semibold text-gray-900">
+                                  Keterangan Data
+                              </h3>
+                              <button id="closeModalBtnChart" class="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors duration-200">
+                                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                  </svg>
+                              </button>
+                          </div>
+                          <div class="flex flex-col">
+                            <div class="flex items-center gap-2 p-2 border-b border-gray-100">
+                              <h1 class="font-semibold uppercase text-sm">Ranking Desa</h1>
+                              <p class="text-sm">: Desa dengan tingkat (%) tertinggi pada periode terpilih.</p>
+                            </div>
+                            <div class="flex items-center gap-2 p-2 border-b border-gray-100">
+                              <h1 class="font-semibold uppercase text-sm">Rata-rata Bulanan</h1>
+                              <p class="text-sm">: (Σ kasus ÷ Σ populasi × 100) agregat seluruh desa per bulan (12 bulan terakhir).</p>
+                            </div>
+                          </div>
+                          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                              <div class="flex justify-end">
+                                  <button id="closeModalFooterBtnChart" class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                      Tutup
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+            </div>
+          </div>
           <div class="flex flex-col md:flex-row gap-2">
-            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
+            <div class="bg-white rounded-b-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
               <h3 class="font-semibold mb-3">Ranking Desa (%)</h3>
               <div class="h-80 md:h-96"><canvas id="rankingChart"></canvas></div>
             </div>
-            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
+            <div class="bg-white rounded-2xl md:rounded-b-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
               <h3 class="font-semibold mb-3">Rata-rata Bulanan Dalam Satu Tahun Kebelakang</h3>
               <div class="h-80 md:h-96"><canvas id="trendChart"></canvas></div>
             </div>
           </div>
         </section>
-      
+
         @php
           // semua query saat ini
           $qsAll = request()->query();
 
-          // fungsi buat URL sort kolom + toggle arah
+          // fungsi buat URL sort kolom + toggle arah (pastikan tetap di tab TABLE)
           $mkSortUrl = function(string $col) use ($qsAll, $sort, $dir) {
               $nextDir = ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
               return route('stunting.index', array_merge($qsAll, [
                   'sort' => $col,
                   'dir'  => $nextDir,
-                  'view' => 'table', // pastikan tetap di tab table
+                  'view' => 'table', // <- FIX: jangan loncat ke chart saat sort
               ]));
           };
-        
+
           // ikon panah arah sort
           $sortArrow = function(string $col) use ($sort, $dir) {
               if ($sort !== $col) return '';
@@ -155,6 +195,63 @@
         {{-- ===== Tab: TABLE ===== --}}
         <section id="tab-table" class="{{ $currentView==='table' ? '' : 'hidden' }}">
           <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
+              <div class="bg-white rounded-t-2xl w-full shadow-sm ring-1 ring-gray-100 p-4 border-b border-gray-200 flex justify-between">
+                <div>
+                  <h1 class="text-lg font-semibold text-gray-800">Table Data Stunting</h1>
+                </div>
+                <div id="modalKeterangan">
+                  <button id="openModalBtnTable" class="flex items-center p-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 hover:cursor-pointer focus:ring-offset-2 transition-colors duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                  </button>
+
+                  <div id="modalOverlayTable" class="fixed inset-0 bg-opacity-50 z-50 hidden">
+                      <div class="flex items-center justify-center min-h-screen p-4">
+                          <div class="bg-white rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContentTable">
+                              <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                                  <h3 class="text-lg font-semibold text-gray-900">
+                                      Keterangan Data
+                                  </h3>
+                                  <button id="closeModalBtnTable" class="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors duration-200">
+                                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                      </svg>
+                                  </button>
+                              </div>
+
+                              <div class="flex flex-col">
+                                <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                  <h1 class="font-semibold uppercase text-sm">Kasus</h1>
+                                  <p class="text-sm">: Jumlah stunting tercatat.</p>
+                                </div>
+                                <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                  <h1 class="font-semibold uppercase text-sm">Populasi</h1>
+                                  <p class="text-sm">: Total penduduk per desa.</p>
+                                </div>
+                                <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                  <h1 class="font-semibold uppercase text-sm">Tingkat</h1>
+                                  <p class="text-sm">: Persentase kasus terhadap populasi.</p>
+                                </div>
+                                <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                  <h1 class="font-semibold uppercase text-sm">Periode</h1>
+                                  <p class="text-sm">: Rentang waktu data (Bulanan).</p>
+                                </div>
+                              </div>
+
+                              <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                                  <div class="flex justify-end">
+                                      <button id="closeModalFooterBtnTable" class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                          Tutup
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="table-scroll">
                   <table class="min-w-full text-left text-sm">
                     <thead>
@@ -192,7 +289,6 @@
                                 $sevRow = isset($d->severity) ? $d->severity : ($rate > 20 ? 'high' : ($rate >= 10 ? 'medium' : 'low'));
                                 $clr = $sevRow === 'high' ? 'bg-red-600 text-white'
                                     : ($sevRow === 'medium' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white');
-                                // ✅ ubah format periode jadi huruf
                                 $periodText = \Illuminate\Support\Carbon::parse($d->period)->isoFormat("MMM 'YY");
                             @endphp
                             <tr class="hover:bg-gray-50">
@@ -206,7 +302,6 @@
                                 </td>
                                 <td class="px-4 py-3">{{ $periodText }}</td>
                                 @auth
-                                
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <a href="{{ route('stunting.edit', $d) }}" class="text-blue-600 hover:underline">Edit</a>
                                     <form action="{{ route('stunting.destroy', $d) }}" method="POST" class="inline"
@@ -226,7 +321,6 @@
                   </table>
               </div>
 
-              {{-- Footer / pagination --}}
               <div class="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-600">
                   <div>
                       @if ($rows->total() > 0)
@@ -244,36 +338,28 @@
     </div>
 
     @push('scripts')
-  {{-- Chart libs untuk tab Grafik --}}
+  {{-- Chart libs --}}
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
   <script>
-    // Register datalabels sekali (aman jika script di-include berkali-kali)
     if (window.ChartDataLabels && !Chart.registry.plugins.get('datalabels')) {
       Chart.register(window.ChartDataLabels);
     }
 
-    // Simpan instance supaya tidak dobel render
     let rankingChartInstance = null;
     let trendChartInstance   = null;
 
-    // Warna batang berdasarkan rate (%)
     const colorByRate = (v) => v > 20 ? '#dc2626' : (v >= 10 ? '#f97316' : '#16a34a');
-
-    // Bulatkan ke atas ke kelipatan 5 serta beri headroom 15% biar skala rapi
     const pad5 = (v) => Math.ceil((v * 1.15) / 5) * 5;
 
     async function loadChartsIfNeeded() {
-      // Kalau chart sudah dibuat, tidak usah render lagi
       if (rankingChartInstance && trendChartInstance) return;
 
-      // Siapkan URL endpoint JSON chart
       const periodParam = @json($period ?? null);
       const url = new URL(@json(route('stunting.chart')));
       if (periodParam) url.searchParams.set('period', periodParam);
 
-      // Ambil data JSON
       let json;
       try {
         const res = await fetch(url);
@@ -281,10 +367,9 @@
         json = await res.json();
       } catch (e) {
         console.error(e);
-        return; // gagal fetch -> hentikan
+        return;
       }
 
-      // --------- Siapkan data & skala ----------
       const labels = (json.ranking ?? []).map(r => r.desa);
       const data   = (json.ranking ?? []).map(r => r.rate);
       const colors = data.map(colorByRate);
@@ -292,7 +377,6 @@
       const maxRate  = data.length ? Math.max(...data) : 0;
       const maxTrend = (json.trend ?? []).length ? Math.max(...json.trend) : 0;
 
-      // --------- RANKING (horizontal bar) ----------
       const rCanvas = document.getElementById('rankingChart');
       if (rCanvas) {
         const rctx = rCanvas.getContext('2d');
@@ -300,40 +384,25 @@
           type: 'bar',
           data: {
             labels,
-            datasets: [{
-              label: 'Tingkat (%)',
-              data,
-              backgroundColor: colors,
-              borderWidth: 0
-            }]
+            datasets: [{ label: 'Tingkat (%)', data, backgroundColor: colors, borderWidth: 0 }]
           },
           options: {
-            indexAxis: 'y',               // horizontal
+            indexAxis: 'y',
             responsive: true,
-            maintainAspectRatio: false,   // tinggi ikut container
+            maintainAspectRatio: false,
             scales: {
-              x: {
-                beginAtZero: true,
-                suggestedMax: pad5(maxRate),
-                ticks: { stepSize: 5, callback: v => v + '%' }
-              },
+              x: { beginAtZero: true, suggestedMax: pad5(maxRate), ticks: { stepSize: 5, callback: v => v + '%' } },
               y: { ticks: { autoSkip: false } }
             },
             plugins: {
               legend: { display: false },
               tooltip: { callbacks: { label: ctx => `${ctx.raw}%` } },
-              datalabels: {
-                anchor: 'end',
-                align: 'right',
-                formatter: (v) => v + '%',
-                clamp: true
-              }
+              datalabels: { anchor: 'end', align: 'right', formatter: (v) => v + '%', clamp: true }
             }
           }
         });
       }
 
-      // --------- TREND (line) ----------
       const tCanvas = document.getElementById('trendChart');
       if (tCanvas) {
         const tctx = tCanvas.getContext('2d');
@@ -355,54 +424,32 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              y: {
-                beginAtZero: true,
-                suggestedMax: pad5(maxTrend),
-                ticks: { stepSize: 5, callback: v => v + '%' }
-              }
+              y: { beginAtZero: true, suggestedMax: pad5(maxTrend), ticks: { stepSize: 5, callback: v => v + '%' } }
             },
             plugins: {
               legend: { display: false },
-              datalabels: {
-                align: 'top',
-                anchor: 'end',
-                formatter: (v) => v + '%'
-              }
+              datalabels: { align: 'top', anchor: 'end', formatter: (v) => v + '%' }
             }
           }
         });
       }
     }
 
-    // ---------- Tabs logic ----------
-    const viewInput = document.getElementById('viewInput'); // hidden input di form filter
+    const viewInput = document.getElementById('viewInput');
     const tabBtns   = document.querySelectorAll('.tab-btn');
     const tabTable  = document.getElementById('tab-table');
     const tabChart  = document.getElementById('tab-chart');
 
     function setActiveTab(name) {
       if (!tabTable || !tabChart) return;
-
-      // Toggle konten
       if (name === 'chart') {
         tabChart.classList.remove('hidden');
         tabTable.classList.add('hidden');
-        loadChartsIfNeeded(); // render chart saat pertama kali buka tab
+        loadChartsIfNeeded();
       } else {
         tabTable.classList.remove('hidden');
         tabChart.classList.add('hidden');
       }
-
-      // Update style tombol tab
-      tabBtns.forEach(btn => {
-        const active = btn.dataset.tab === name;
-        btn.classList.toggle('bg-white', active);
-        btn.classList.toggle('shadow', active);
-        btn.classList.toggle('text-gray-900', active);
-        btn.classList.toggle('text-gray-600', !active);
-      });
-
-      // Simpan ke hidden input & URL (tanpa reload)
       if (viewInput) viewInput.value = name;
       const url = new URL(window.location.href);
       url.searchParams.set('view', name);
@@ -413,26 +460,71 @@
       btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
     });
 
-    // Inisialisasi sesuai state dari server (variabel $currentView harus dikirim dari controller)
     document.addEventListener('DOMContentLoaded', () => {
       const initial = @json($currentView ?? 'table');
       setActiveTab(initial);
     });
 
-    // ---------- Auto submit filter ----------
     const f = document.getElementById('filterForm');
     const sev = document.getElementById('severity');
     const period = document.getElementById('period');
     if (f && sev)    sev.addEventListener('change',   () => f.submit());
     if (f && period) period.addEventListener('change',() => f.submit());
+    const qInp = document.getElementById('q');
+    if (f && qInp) qInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') f.submit(); });
+  </script>
 
-    const q = document.getElementById('q');
-    if (f && q) q.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') f.submit();
-    });
+  {{-- Modal scripts untuk Table & Chart (punyamu) --}}
+  <script>
+      // TABLE modal
+      const openModalBtnTable = document.getElementById('openModalBtnTable');
+      const modalOverlayTable = document.getElementById('modalOverlayTable');
+      const modalContentTable = document.getElementById('modalContentTable');
+      const closeModalBtnTable = document.getElementById('closeModalBtnTable');
+      const closeModalFooterBtnTable = document.getElementById('closeModalFooterBtnTable');
+      function openModal() {
+          modalOverlayTable.classList.remove('hidden');
+          setTimeout(() => {
+              modalContentTable.classList.remove('scale-95', 'opacity-0');
+              modalContentTable.classList.add('scale-100', 'opacity-100');
+          }, 10);
+      }
+      function closeModal() {
+          modalContentTable.classList.remove('scale-100', 'opacity-100');
+          modalContentTable.classList.add('scale-95', 'opacity-0');
+          setTimeout(() => { modalOverlayTable.classList.add('hidden'); }, 300);
+      }
+      openModalBtnTable?.addEventListener('click', openModal);
+      closeModalBtnTable?.addEventListener('click', closeModal);
+      closeModalFooterBtnTable?.addEventListener('click', closeModal);
+      modalOverlayTable?.addEventListener('click', function(e) { if (e.target === modalOverlayTable) closeModal(); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modalOverlayTable.classList.contains('hidden')) closeModal(); });
+  </script>
 
-    const tambahData = document.getElementById('tambahData');
-    
+  <script>
+      // CHART modal
+      const openModalBtnChart = document.getElementById('openModalBtnChart');
+      const modalOverlayChart = document.getElementById('modalOverlayChart');
+      const modalContentChart = document.getElementById('modalContentChart');
+      const closeModalBtnChart = document.getElementById('closeModalBtnChart');
+      const closeModalFooterBtnChart = document.getElementById('closeModalFooterBtnChart');
+      function openModal() {
+          modalOverlayChart.classList.remove('hidden');
+          setTimeout(() => {
+              modalContentChart.classList.remove('scale-95', 'opacity-0');
+              modalContentChart.classList.add('scale-100', 'opacity-100');
+          }, 10);
+      }
+      function closeModal() {
+          modalContentChart.classList.remove('scale-100', 'opacity-100');
+          modalContentChart.classList.add('scale-95', 'opacity-0');
+          setTimeout(() => { modalOverlayChart.classList.add('hidden'); }, 300);
+      }
+      openModalBtnChart?.addEventListener('click', openModal);
+      closeModalBtnChart?.addEventListener('click', closeModal);
+      closeModalFooterBtnChart?.addEventListener('click', closeModal);
+      modalOverlayChart?.addEventListener('click', function(e) { if (e.target === modalOverlayChart) closeModal(); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modalOverlayChart.classList.contains('hidden')) closeModal(); });
   </script>
 @endpush
 

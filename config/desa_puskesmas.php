@@ -71,7 +71,7 @@ return [
 
         'Puskesmas Lamajang' => [
             'lat' => -7.177820379945676, 
-            'lng' => 107.57101437324157,
+            'lng' => 107.57301437324157,
             'tipe' => 'Pembantu 4',
             'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
         ],
