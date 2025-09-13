@@ -87,6 +87,7 @@ class HomeController extends Controller
         })->values();
 
         return view('home.index', [
+            'pageTitle'           => 'Home',
             'period'              => $periodM,
             'displayPeriodLabel'  => $displayPeriodLabel,
             'stats'               => $stats,

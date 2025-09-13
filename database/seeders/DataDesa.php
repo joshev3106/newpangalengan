@@ -14,10 +14,7 @@ class DataDesa extends Seeder
     {
         $now = now();
 
-        /**
-         * Basis populasi per desa agar angka stabil namun tetap realistis.
-         * Nanti tiap bulan diberi variasi kecil (jitter).
-         */
+        // ===== Basis populasi per desa =====
         $villages = [
             'Banjarsari'     => 5000,
             'Lamajang'       => 2800,
@@ -34,10 +31,7 @@ class DataDesa extends Seeder
             'Warnasari'      => 1200,
         ];
 
-        /**
-         * Rentang rate (kasus/populasi) per desa—mencerminkan karakter desa
-         * tapi tetap memberi ruang variasi bulanan.
-         */
+        // ===== Rentang rate (kasus/populasi) per desa =====
         $rateRanges = [
             'Banjarsari'     => [0.08, 0.14],
             'Lamajang'       => [0.25, 0.40],
@@ -54,39 +48,36 @@ class DataDesa extends Seeder
             'Warnasari'      => [0.45, 0.60],
         ];
 
-        // ====== SET PERIODE (24 bulan) ======
-        $start  = new DateTime('2025-01-01'); // ubah di sini kalau perlu
-        $months = 24;                         // 24 bulan = 2 tahun
+        // ====== PERIODE (24 bulan) ======
+        $start  = new DateTime('2025-01-01'); // ubah bila perlu
+        $months = 24;
 
         $data = [];
+
+        // NEW: simpan kasus bulan terakhir per desa (untuk clamp served <= kasus)
+        $latestKasusByDesa = [];   // [desa => kasus_terakhir]
 
         for ($m = 0; $m < $months; $m++) {
             $periodDate = (clone $start)->modify("+$m month")->format('Y-m-01');
 
             foreach ($villages as $desa => $basePop) {
-                // Seed deterministik per (desa, bulan) agar konsisten
                 $seed = $this->seedInt($desa . '|' . $m);
 
-                // Variasi populasi bulanan kecil: ±200
+                // jitter populasi ±200
                 $popJitter = (($seed >> 8) % 401) - 200; // -200..+200
                 $populasi  = max(500, (int) round($basePop + $popJitter));
 
-                // Rentang rate per desa + variasi musiman halus (±5%)
+                // rate dengan variasi musiman halus
                 [$rMin, $rMax] = $rateRanges[$desa];
                 $monthOfYear   = $m % 12;
                 $phase         = (($seed >> 16) % 628) / 100.0; // 0..6.28
                 $season        = 1.0 + 0.05 * sin(2 * M_PI * ($monthOfYear / 12.0) + $phase);
+                $u             = $this->fracFromSeed($seed);
+                $rate          = $rMin + $u * ($rMax - $rMin);
+                $rate         *= $season;
+                $rate          = $this->clamp($rate, $rMin, $rMax);
 
-                // Variasi acak deterministik dalam rentang + season
-                $u    = $this->fracFromSeed($seed); // 0..1
-                $rate = $rMin + $u * ($rMax - $rMin);
-                $rate *= $season;
-
-                // Clamp agar tetap dalam [rMin, rMax]
-                $rate  = $this->clamp($rate, $rMin, $rMax);
                 $kasus = (int) round($rate * $populasi);
-
-                // Safety guard
                 if ($kasus > $populasi) $kasus = $populasi;
                 if ($kasus < 0)         $kasus = 0;
 
@@ -98,34 +89,85 @@ class DataDesa extends Seeder
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
+
+                // simpan kasus terakhir (loop urut naik → nilai terakhir adalah periode terbaru)
+                $latestKasusByDesa[$desa] = $kasus;
             }
         }
 
-        // Upsert ke tabel 'stuntings' berdasarkan kombinasi unik (desa, period)
+        // Upsert ke tabel stuntings
         DB::table('stuntings')->upsert(
             $data,
-            ['desa', 'period'],                  // kunci unik gabungan
-            ['kasus', 'populasi', 'updated_at']  // kolom yang di-update jika bentrok
+            ['desa', 'period'],
+            ['kasus', 'populasi', 'updated_at']
         );
 
+        // ===== NEW: hitung rata-rata rate 12 bulan terakhir per desa =====
+        $cutoff = (clone $start)->modify('+' . max(0, $months - 12) . ' month')->format('Y-m-01');
+        $agg = []; // [desa => ['kasus' => x, 'populasi' => y]]
+        foreach ($data as $row) {
+            if ($row['period'] < $cutoff) continue; // pakai 12 bulan terakhir
+            $d = $row['desa'];
+            if (!isset($agg[$d])) $agg[$d] = ['kasus' => 0, 'populasi' => 0];
+            $agg[$d]['kasus']    += $row['kasus'];
+            $agg[$d]['populasi'] += $row['populasi'];
+        }
+
+        // Desa unik
         $desas = collect($data)->pluck('desa')->unique()->values();
 
         foreach ($desas as $desa) {
             $profile = DesaProfile::firstOrNew(['desa' => $desa]);
 
-            // isi hanya jika keduanya masih kosong (tidak menimpa data manual)
+            // Tentukan faskes (seperti sebelumnya)
             if (empty($profile->puskesmas_id) && empty($profile->faskes_terdekat)) {
                 $res = FaskesResolver::resolveForDesa($desa);
                 $profile->puskesmas_id    = $res['puskesmas_id'];
                 $profile->faskes_terdekat = $res['faskes_text'];
-                $profile->save();
             }
+
+            // ===== Isi cakupan jika belum ada (estimasi dari avg rate 12 bulan) =====
+            if (is_null($profile->cakupan)) {
+                $sumKas = $agg[$desa]['kasus']    ?? 0;
+                $sumPop = $agg[$desa]['populasi'] ?? 0;
+                $avgRatePct = $sumPop > 0 ? ($sumKas / $sumPop) * 100.0 : 0.0;
+
+                // Model sederhana: cakupan ≈ 95 − 1.6×avgRate ± noise kecil
+                $seed   = $this->seedInt('cov|' . $desa);
+                $noise  = (($seed >> 10) % 11) - 5; // -5..+5
+                $base   = 95 - 1.6 * $avgRatePct;
+                $value  = (int) round($this->clamp($base + $noise, 40, 98)); // clamp 40–98%
+
+                $profile->cakupan = $value; // persen
+            }
+
+            // ===== NEW: set 'served' & pastikan TIDAK melebihi 'kasus' =====
+            $latestKasus = (int) ($latestKasusByDesa[$desa] ?? 0);
+
+            // Jika belum ada served, hitung dari cakupan × kasus TERAKHIR
+            if (is_null($profile->served)) {
+                if (!is_null($profile->cakupan) && $latestKasus >= 0) {
+                    $servedEst = (int) round(($profile->cakupan / 100) * $latestKasus);
+                } else {
+                    // fallback 60–90% dari kasus terakhir
+                    $sSeed     = $this->seedInt('served|' . $desa);
+                    $pct       = 0.60 + (($sSeed % 31) / 100); // 0.60..0.90
+                    $servedEst = (int) round($pct * $latestKasus);
+                }
+                // Clamp ke [0, kasus_terakhir]
+                $profile->served = max(0, min($servedEst, $latestKasus));
+            } else {
+                // Kalau sudah ada served, tetap jaga agar <= kasus terbaru
+                $profile->served = max(0, min((int)$profile->served, $latestKasus));
+            }
+
+            $profile->save();
         }
     }
 
-    /**
-     * Helper: fractional value 0..1 dari seed int (deterministik).
-     */
+    // ===== Helpers =====
+
+    /** fractional value 0..1 dari seed int (deterministik). */
     private function fracFromSeed(int $seed): float
     {
         $mod = $seed % 1000;
@@ -133,21 +175,15 @@ class DataDesa extends Seeder
         return $mod / 1000.0;
     }
 
-    /**
-     * Helper: clamp nilai ke [lo, hi].
-     */
+    /** clamp ke [lo, hi]. */
     private function clamp(float $v, float $lo, float $hi): float
     {
         return max($lo, min($hi, $v));
     }
 
-    /**
-     * Helper: jadikan string => seed int stabil memakai CRC32B.
-     */
+    /** konversi string -> seed int stabil (CRC32B). */
     private function seedInt(string $s): int
     {
-        // hexdec(hash('crc32b', ...)) menghasilkan 32-bit unsigned yang stabil.
-        // Casting ke int aman dipakai untuk operasi bit (shift/and).
         return (int) (hexdec(hash('crc32b', $s)) & 0xFFFFFFFF);
     }
 }

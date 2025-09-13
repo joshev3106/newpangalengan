@@ -1,3 +1,23 @@
+@props(['title' => null])
+
+@php
+  use Illuminate\Support\Str;
+
+  // Fallback judul dari nama route jika prop title tidak dikirim
+  $routeName = Route::currentRouteName();
+  $labels = [
+    'home'             => 'Beranda',
+    'stunting.index'   => 'Data Stunting',
+    'stunting.create'  => 'Tambah Data Stunting',
+    'stunting.edit'    => 'Edit Data Stunting',
+    'wilayah.index'    => 'Data Wilayah',
+    'wilayah.edit'     => 'Edit Profil Wilayah',
+    'hotspot.index'    => 'Analisis Hotspot',
+    'peta'             => 'Peta Faskes',
+  ];
+  $computedTitle = $title ?? ($labels[$routeName] ?? Str::headline(str_replace('.', ' ', $routeName)));
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +31,7 @@
     @vite('resources/css/app.css')
 </head>
 <body>
-    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit', 'home'))
+    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit', 'home', 'wilayah.edit'))
         <x-navbar></x-navbar>
     @endif
 

@@ -1,6 +1,5 @@
 <?php
 
-// app/Http/Controllers/WilayahController.php
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
@@ -18,15 +17,28 @@ class WilayahController extends Controller
         $startM = trim((string) $request->query('start', ''));
         $endM   = trim((string) $request->query('end', ''));
 
-        // === NEW: Sorting params ===
-        $sort = $request->query('sort', 'desa');            // 'desa'|'populasi'|'rate'|'faskes_nama'|'cakupan'
+        // Sorting params
+        $sort = $request->query('sort', 'desa');            // 'desa'|'populasi'|'rate'|'faskes_nama'|'cakupan'|'served'
         $dir  = strtolower($request->query('dir', 'asc'));  // 'asc'|'desc'
         $dir  = in_array($dir, ['asc','desc'], true) ? $dir : 'asc';
 
-        $allowed = ['desa','populasi','rate','faskes_nama','cakupan'];
+        $allowed = ['desa','populasi','rate','faskes_nama','cakupan','served'];
         if (!in_array($sort, $allowed, true)) $sort = 'desa';
 
+        // rate (%) utk sort
         $rateExpr = "(CASE WHEN stuntings.populasi = 0 THEN 0 ELSE (stuntings.kasus * 100.0) / stuntings.populasi END)";
+
+        /**
+         * served:
+         * - jika dp.served TIDAK null -> pakai itu
+         * - jika null dan dp.cakupan ada -> cakupan% * populasi
+         * - jika dua2nya null -> null
+         */
+        $servedExpr = "(CASE
+            WHEN dp.served IS NOT NULL THEN dp.served
+            WHEN dp.cakupan IS NULL THEN NULL
+            ELSE (dp.cakupan/100.0) * stuntings.populasi
+        END)";
 
         // Normalisasi YYYY-MM → YYYY-MM-01 / endOfMonth
         $startDate = null; $endDate = null;
@@ -36,7 +48,7 @@ class WilayahController extends Controller
         // Jika user isi rentang tapi belum isi desa → tolak
         if (($startDate || $endDate) && $desaInput === '') {
             return back()->withErrors(['desa' => 'Silakan isi nama desa terlebih dahulu untuk menelusuri rentang periode.'])
-                        ->withInput();
+                         ->withInput();
         }
 
         // Label range (untuk banner)
@@ -61,11 +73,13 @@ class WilayahController extends Controller
                     'stuntings.kasus',
                     'stuntings.period',
                     'dp.cakupan',
+                    'dp.served',
                     'dp.puskesmas_id',
                     DB::raw('COALESCE(pk.nama, dp.faskes_terdekat, "") as faskes_nama'),
+                    DB::raw("$servedExpr as served_calc"),
                 ]);
 
-            // === NEW: apply sorting (MODE A)
+            // Sorting (MODE A)
             switch ($sort) {
                 case 'populasi':
                     $base->orderBy('stuntings.populasi', $dir)->orderBy('stuntings.desa');
@@ -77,7 +91,10 @@ class WilayahController extends Controller
                     $base->orderBy('faskes_nama', $dir)->orderBy('stuntings.desa');
                     break;
                 case 'cakupan':
-                    $base->orderBy('dp.cakupan', $dir)->orderBy('stuntings.desa');
+                    $base->orderByRaw("(dp.cakupan IS NULL) ASC, dp.cakupan $dir")->orderBy('stuntings.desa');
+                    break;
+                case 'served':
+                    $base->orderByRaw("(($servedExpr) IS NULL) ASC, ($servedExpr) $dir")->orderBy('stuntings.desa');
                     break;
                 case 'desa':
                 default:
@@ -116,7 +133,6 @@ class WilayahController extends Controller
 
             return view('wilayah.index', compact(
                 'rows','puskesmas','rangeLabel','lastUpdateLabel','avgRatePage','desa','displayPeriodLabel',
-                // NEW
                 'sort','dir'
             ));
         }
@@ -126,7 +142,7 @@ class WilayahController extends Controller
 
         $base = Stunting::joinSub($latest,'latest',function($j){
                     $j->on('stuntings.desa','=','latest.desa')
-                    ->on('stuntings.period','=','latest.last_period');
+                      ->on('stuntings.period','=','latest.last_period');
                 })
                 ->leftJoin('desa_profiles as dp', 'stuntings.desa', '=', 'dp.desa')
                 ->leftJoin('puskesmas as pk', 'dp.puskesmas_id', '=', 'pk.id')
@@ -136,15 +152,17 @@ class WilayahController extends Controller
                     'stuntings.kasus',
                     'stuntings.period',
                     'dp.cakupan',
+                    'dp.served',
                     'dp.puskesmas_id',
                     DB::raw('COALESCE(pk.nama, dp.faskes_terdekat, "") as faskes_nama'),
+                    DB::raw("$servedExpr as served_calc"),
                 ]);
 
         if ($desaInput !== '') {
             $base->where('stuntings.desa','like','%'.$desaInput.'%');
         }
 
-        // === NEW: apply sorting (MODE B)
+        // Sorting (MODE B)
         switch ($sort) {
             case 'populasi':
                 $base->orderBy('stuntings.populasi', $dir)->orderBy('stuntings.desa');
@@ -156,7 +174,10 @@ class WilayahController extends Controller
                 $base->orderBy('faskes_nama', $dir)->orderBy('stuntings.desa');
                 break;
             case 'cakupan':
-                $base->orderBy('dp.cakupan', $dir)->orderBy('stuntings.desa');
+                $base->orderByRaw("(dp.cakupan IS NULL) ASC, dp.cakupan $dir")->orderBy('stuntings.desa');
+                break;
+            case 'served':
+                $base->orderByRaw("(($servedExpr) IS NULL) ASC, ($servedExpr) $dir")->orderBy('stuntings.desa');
                 break;
             case 'desa':
             default:
@@ -183,11 +204,79 @@ class WilayahController extends Controller
 
         return view('wilayah.index', compact(
             'rows','puskesmas','rangeLabel','displayPeriodLabel','lastUpdateLabel','avgRatePage','desa',
-            // NEW
             'sort','dir'
         ));
     }
 
+    // ==================== NEW: FORM EDIT ====================
+    public function edit(Request $request, string $desa)
+    {
+        // pastikan desa ada di data stunting
+        $latest = Stunting::where('desa', $desa)->orderByDesc('period')->firstOrFail();
+
+        $profile = DesaProfile::firstOrNew(['desa' => $desa]);
+
+        // prefill served: pakai dp.served, kalau null coba hitung dari cakupan
+        $currentServed = $profile->served ?? (
+            $profile->cakupan !== null
+                ? (int) round(($profile->cakupan / 100) * $latest->kasus)
+                : null
+        );
+
+        // prefill faskes text (pakai text jika ada, kalau tidak pakai nama pk)
+        $pkName = $profile->puskesmas_id
+            ? optional(Puskesmas::find($profile->puskesmas_id))->nama
+            : null;
+        $faskesText = $profile->faskes_terdekat ?: $pkName;
+
+        return view('wilayah.edit', [
+            'desa'          => $desa,
+            'latest'        => $latest,       // punya ->populasi, ->period
+            'profile'       => $profile,      // dp record
+            'served'        => $currentServed,
+            'faskesText'    => $faskesText,
+        ]);
+    }
+
+    // ==================== NEW: UPDATE ====================
+    public function update(Request $request, string $desa)
+    {
+        $latest = Stunting::where('desa', $desa)->orderByDesc('period')->firstOrFail();
+
+        $data = $request->validate([
+            'faskes' => ['nullable','string','max:150'],
+            'served' => ['nullable','integer','min:0'],
+        ]);
+
+        $served = array_key_exists('served', $data) && $data['served'] !== null
+            ? min((int)$data['served'], (int)$latest->populasi)    // clamp ke populasi
+            : null;
+
+        // hitung cakupan (%) dari served; biar tampilan existing tetap jalan
+        $cakupan = $served !== null && $latest->populasi > 0
+            ? min(100, (int) round($served / $latest->populasi * 100))
+            : null;
+
+        $profile = DesaProfile::firstOrNew(['desa' => $desa]);
+
+        // Update nilai
+        $profile->served  = $served;         // perlu kolom 'served' di desa_profiles
+        $profile->cakupan = $cakupan;
+
+        // Faskes Terdekat (text). Kita kosongkan puskesmas_id agar teks ini yang tampil.
+        if (array_key_exists('faskes', $data)) {
+            $profile->faskes_terdekat = $data['faskes'] ?: null;
+            if (!empty($data['faskes'])) {
+                $profile->puskesmas_id = null; // prioritaskan teks kustom
+            }
+        }
+
+        $profile->save();
+
+        return redirect()->route('wilayah.index')->with('ok', 'Profil desa diperbarui.');
+    }
+
+    // ==================== (existing) UPSERT DARI MODAL - masih disimpan kalau dipakai tempat lain ====================
     public function upsert(Request $request)
     {
         $data = $request->validate([
@@ -197,31 +286,26 @@ class WilayahController extends Controller
             'cakupan'      => ['nullable','integer','between:0,100'],
         ]);
 
-        // Desa harus ada di data stunting
         abort_unless(Stunting::where('desa',$data['desa'])->exists(), 404, 'Desa tidak ditemukan.');
 
-        // Tentukan final puskesmas_id & faskes_terdekat
         $puskesmasId = $data['puskesmas_id'] ?? null;
         $faskesText  = trim((string)($data['faskes'] ?? ''));
 
         if (!$puskesmasId && $faskesText === '') {
-            // Auto-suggest: cari puskesmas dengan nama mengandung nama desa
             $match = Puskesmas::where('nama', 'like', '%'.$data['desa'].'%')->first();
             if ($match) {
                 $puskesmasId = $match->id;
             } else {
-                // fallback standar
                 $namaBersih = preg_replace('/^(desa|kelurahan)\s+/i', '', $data['desa']);
                 $faskesText = "Puskesmas {$namaBersih}";
             }
         }
 
-        // Simpan
         DesaProfile::updateOrCreate(
             ['desa' => $data['desa']],
             [
                 'puskesmas_id'    => $puskesmasId,
-                'faskes_terdekat' => $puskesmasId ? null : ($faskesText ?: null), // kalau pakai id, kosongkan teks
+                'faskes_terdekat' => $puskesmasId ? null : ($faskesText ?: null),
                 'cakupan'         => $data['cakupan'] ?? null,
             ]
         );
