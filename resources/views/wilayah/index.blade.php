@@ -123,6 +123,70 @@
 
         {{-- Daftar Wilayah --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
+            <div class="bg-white rounded-t-2xl w-full shadow-sm ring-1 ring-gray-100 p-4 border-b border-gray-200 flex justify-between">
+              <div>
+                <h1 class="text-lg font-semibold text-gray-800">Table Data Wilayah</h1>
+              </div>
+              <div id="modalKeterangan">
+                <button id="openModalBtnTable" class="flex items-center p-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 hover:cursor-pointer focus:ring-offset-2 transition-colors duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </button>        
+
+                <div id="modalOverlayTable" class="fixed inset-0 bg-opacity-50 z-50 hidden">
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContentTable">
+                            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    Keterangan Data
+                                </h3>
+                                <button id="closeModalBtnTable" class="text-gray-400 hover:cursor-pointer hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors duration-200">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>        
+
+                            <div class="flex flex-col">
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Populasi</h1>
+                                <p class="text-sm">: Total penduduk per desa.</p>
+                              </div>
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Kasus</h1>
+                                <p class="text-sm">: Jumlah stunting tercatat.</p>
+                              </div>
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Stunting</h1>
+                                <p class="text-sm">: Persentase kasus terhadap populasi.</p>
+                              </div>
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Faskes Terdekat</h1>
+                                <p class="text-sm">: Faskes terdekat dari desa.</p>
+                              </div>
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Kasus Ditangani</h1>
+                                <p class="text-sm">: Jumlah kasus stunting yang sudah ditangani.</p>
+                              </div>
+                              <div class="flex items-center  gap-2 p-2 border-b border-gray-100">
+                                <h1 class="font-semibold uppercase text-sm">Cakupan</h1>
+                                <p class="text-sm">: Persentase (Σ kasus ÷ Σ kasus ditangani × 100).</p>
+                              </div>
+                            </div>           
+
+                            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                                <div class="flex justify-end">
+                                    <button id="closeModalFooterBtnTable" class="hover:cursor-pointer px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </div>
             <div class="overflow-auto">
                 <table class="min-w-full text-left text-sm">
                     <thead class="text-gray-600 border-b">
@@ -325,6 +389,32 @@
             }
           }
         }
+        </script>
+
+        <script>
+            // TABLE modal
+            const openModalBtnTable = document.getElementById('openModalBtnTable');
+            const modalOverlayTable = document.getElementById('modalOverlayTable');
+            const modalContentTable = document.getElementById('modalContentTable');
+            const closeModalBtnTable = document.getElementById('closeModalBtnTable');
+            const closeModalFooterBtnTable = document.getElementById('closeModalFooterBtnTable');
+            function openModal() {
+                modalOverlayTable.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContentTable.classList.remove('scale-95', 'opacity-0');
+                    modalContentTable.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+            function closeModal() {
+                modalContentTable.classList.remove('scale-100', 'opacity-100');
+                modalContentTable.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => { modalOverlayTable.classList.add('hidden'); }, 300);
+            }
+            openModalBtnTable?.addEventListener('click', openModal);
+            closeModalBtnTable?.addEventListener('click', closeModal);
+            closeModalFooterBtnTable?.addEventListener('click', closeModal);
+            modalOverlayTable?.addEventListener('click', function(e) { if (e.target === modalOverlayTable) closeModal(); });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modalOverlayTable.classList.contains('hidden')) closeModal(); });
         </script>
     @endpush
 </x-layout>

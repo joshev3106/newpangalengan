@@ -18,12 +18,12 @@ class DataController extends Controller
     //     return view('data-stunting');
     // }
 
-    public function peta(Request $request) {
-        $tab = $request->query('tab', 'stunting'); // default ke 'stunting'
-        // jaga-jaga kalau value aneh
-        if (!in_array($tab, ['stunting','puskesmas'], true)) $tab = 'stunting';
-        return view('peta.index', compact('tab'));
-    }
+    // public function peta(Request $request) {
+    //     $tab = $request->query('tab', 'stunting'); // default ke 'stunting'
+    //     // jaga-jaga kalau value aneh
+    //     if (!in_array($tab, ['stunting','puskesmas'], true)) $tab = 'stunting';
+    //     return view('peta.index', compact('tab'));
+    // }
 
     // public function dataWilayah() {
     //     return view('data-wilayah');

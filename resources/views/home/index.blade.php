@@ -65,7 +65,7 @@
               <p class="text-red-100 text-xs sm:text-sm">Kabupaten Bandung • Provinsi Jawa Barat</p>
               <div class="mt-2 flex flex-wrap justify-center sm:justify-start items-center gap-2 text-xs sm:text-sm text-red-100/90">
                 <span class="px-2 py-1 rounded-lg bg-white/10 border border-white/10 whitespace-nowrap">
-                  {{ number_format($pkCount) }} Puskesmas
+                  {{ number_format($pkCount) }} Faskes
                 </span>
                 <span class="px-2 py-1 rounded-lg bg-white/10 border border-white/10 whitespace-nowrap">
                   {{ number_format($desaMappedCount) }} Desa Terpetakan
@@ -86,7 +86,7 @@
             <div class="text-xl sm:text-2xl font-bold mt-1">{{ number_format($stats['avg'], 1) }}%</div>
           </div>
           <div class="glass rounded-2xl p-3 sm:p-4 text-red-50 flex-1 w-full">
-            <div class="text-[10px] sm:text-[11px] uppercase tracking-wide text-white/80">Puskesmas</div>
+            <div class="text-[10px] sm:text-[11px] uppercase tracking-wide text-white/80">Faskes</div>
             <div class="text-xl sm:text-2xl font-bold mt-1">{{ number_format($pkCount) }}</div>
           </div>
         </div>
@@ -156,7 +156,7 @@
       <div class="flex-1 flex flex-col gap-5 sm:gap-6">
         {{-- Top 5 --}}
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
-          <div class="px-4 sm:px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="px-4 sm:px-5 py-4 border-b flex sm:items-center justify-between gap-2">
             <h3 class="font-semibold text-gray-800">Top 5 Desa (berdasarkan %)</h3>
             <span class="text-xs px-3 py-1 rounded-full bg-gray-100 self-start sm:self-auto">
               {{ !empty($period) ? 'Periode: '.$period : 'Terbaru' }}
@@ -228,7 +228,7 @@
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100">
           <div class="px-4 sm:px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 class="font-semibold text-gray-800">Peta Fasilitas Kesehatan</h3>
-            <span class="text-xs text-gray-500 self-start sm:self-auto">{{ number_format($pkCount) }} puskesmas</span>
+            <span class="text-xs text-gray-500 self-start sm:self-auto">{{ number_format($pkCount) }} Faskes</span>
           </div>
           <div class="p-4 sm:p-5">
             <div id="home-pk-map" class="w-full rounded-xl overflow-hidden ring-1 ring-gray-100" 
@@ -271,7 +271,7 @@
                class="group flex items-center justify-between px-4 py-3 rounded-xl ring-1 ring-gray-200 hover:bg-gray-50 transition">
               <div>
                 <div class="font-medium">Peta Faskes</div>
-                <div class="text-xs text-gray-500">{{ number_format($pkCount) }} puskesmas • {{ number_format($desaMappedCount) }} desa</div>
+                <div class="text-xs text-gray-500">{{ number_format($pkCount) }} Faskes • {{ number_format($desaMappedCount) }} desa</div>
               </div>
               <span class="text-gray-400 group-hover:translate-x-1 transition">→</span>
             </a>

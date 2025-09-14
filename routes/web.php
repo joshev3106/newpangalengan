@@ -9,6 +9,7 @@ use App\Http\Controllers\WilayahController;
 use App\Http\Controllers\StuntingController;
 use App\Http\Controllers\HomeController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Rute Publik
@@ -33,8 +34,13 @@ Route::get('/hotspot/data', [HotspotController::class, 'data'])->name('hotspot.d
 Route::get('/peta', [PetaController::class, 'index'])->name('peta');
 
 // Laporan (publik atau bisa dipindah ke auth bila perlu)
-Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
+// Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
 
+Route::get('/laporan', function () {
+    return view('laporan.index');
+});
+
+// --- Laporan (Ringkasan + Ekspor) ---
 
 /*
 |--------------------------------------------------------------------------
