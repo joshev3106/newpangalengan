@@ -6,6 +6,7 @@ use App\Models\Stunting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use App\Support\StuntingStats;
 
 class HomeController extends Controller
 {
@@ -66,7 +67,7 @@ class HomeController extends Controller
             'low'    => $withRate->where('severity','low')->count(),
             'not'    => $withRate->where('severity','not')->count(),
             'total'  => $withRate->count(),
-            'avg'    => round($withRate->avg(fn($x) => $x->rate) ?? 0, 1),
+            'avg'    => StuntingStats::simpleAverageRate($withRate),
         ];
 
         $top5 = $withRate->sortByDesc('rate')->take(5)->values();
@@ -95,7 +96,7 @@ class HomeController extends Controller
             'top5'                => $top5,
             'pkCount'             => $pkCount,
             'desaMappedCount'     => $desaMappedCount,
-            'pkMarkers'           => $pkMarkers, // ⬅️ kirim ke blade
+            'pkMarkers'           => $pkMarkers,
         ]);
     }
 }

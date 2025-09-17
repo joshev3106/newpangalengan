@@ -114,7 +114,7 @@
 
         {{-- ===== Tab: CHART ===== --}}
         <section id="tab-chart" class="{{ $currentView==='chart' ? '' : 'hidden' }}">
-          <div class="bg-white rounded-t-2xl w-full shadow-sm ring-1 ring-gray-100 p-4 border-b border-gray-200 flex justify-between">
+          <div class="bg-white rounded-2xl w-full mb-2 shadow-sm ring-1 ring-gray-100 p-4 border-b border-gray-200 flex justify-between">
             <div>
               <h1 class="text-lg font-semibold text-gray-800">Chart Data Stunting</h1>
             </div>
@@ -160,11 +160,11 @@
             </div>
           </div>
           <div class="flex flex-col md:flex-row gap-2">
-            <div class="bg-white rounded-b-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
+            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
               <h3 class="font-semibold mb-3">Ranking Desa (%)</h3>
               <div class="h-80 md:h-96"><canvas id="rankingChart"></canvas></div>
             </div>
-            <div class="bg-white rounded-2xl md:rounded-b-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
+            <div class="bg-white rounded-2xl w-full shadow-sm ring-1 ring-gray-100 p-4">
               <h3 class="font-semibold mb-3">Rata-rata Bulanan Dalam Satu Tahun Kebelakang</h3>
               <div class="h-80 md:h-96"><canvas id="trendChart"></canvas></div>
             </div>
@@ -172,20 +172,15 @@
         </section>
 
         @php
-          // semua query saat ini
           $qsAll = request()->query();
-
-          // fungsi buat URL sort kolom + toggle arah (pastikan tetap di tab TABLE)
           $mkSortUrl = function(string $col) use ($qsAll, $sort, $dir) {
               $nextDir = ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
               return route('stunting.index', array_merge($qsAll, [
                   'sort' => $col,
                   'dir'  => $nextDir,
-                  'view' => 'table', // <- FIX: jangan loncat ke chart saat sort
+                  'view' => 'table',
               ]));
           };
-
-          // ikon panah arah sort
           $sortArrow = function(string $col) use ($sort, $dir) {
               if ($sort !== $col) return '';
               return $dir === 'asc' ? '↑' : '↓';
@@ -338,10 +333,8 @@
     </div>
 
     @push('scripts')
-  {{-- Chart libs --}}
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-
   <script>
     if (window.ChartDataLabels && !Chart.registry.plugins.get('datalabels')) {
       Chart.register(window.ChartDataLabels);
@@ -351,13 +344,13 @@
     let trendChartInstance   = null;
 
     const colorByRate = (v) => v > 20 ? '#dc2626' : (v >= 10 ? '#f97316' : '#16a34a');
-    const pad5 = (v) => Math.ceil((v * 1.15) / 5) * 5;
+    const pad5 = (v) => (v <= 0 ? 5 : Math.ceil((v * 1.15) / 5) * 5);
 
     async function loadChartsIfNeeded() {
       if (rankingChartInstance && trendChartInstance) return;
 
       const periodParam = @json($period ?? null);
-      const url = new URL(@json(route('stunting.chart')));
+      const url = new URL(@json(route('stunting.chart'))); // -> /stunting/chart-data
       if (periodParam) url.searchParams.set('period', periodParam);
 
       let json;
@@ -370,21 +363,25 @@
         return;
       }
 
-      const labels = (json.ranking ?? []).map(r => r.desa);
-      const data   = (json.ranking ?? []).map(r => r.rate);
-      const colors = data.map(colorByRate);
+      // ===== Ranking (Top 25) =====
+      const ranking = Array.isArray(json.ranking) ? json.ranking : [];
+      const rWrap   = document.getElementById('rankingChart')?.parentElement;
 
-      const maxRate  = data.length ? Math.max(...data) : 0;
-      const maxTrend = (json.trend ?? []).length ? Math.max(...json.trend) : 0;
+      if (!ranking.length) {
+        if (rWrap) rWrap.innerHTML = '<div class="h-80 md:h-96 grid place-items-center text-sm text-gray-500">Tidak ada data ranking untuk periode ini.</div>';
+      } else {
+        const labels = ranking.map(r => r.desa);
+        const data   = ranking.map(r => r.rate);
+        const colors = data.map(colorByRate);
+        const maxRate = Math.max(...data);
 
-      const rCanvas = document.getElementById('rankingChart');
-      if (rCanvas) {
+        const rCanvas = document.getElementById('rankingChart');
         const rctx = rCanvas.getContext('2d');
         rankingChartInstance = new Chart(rctx, {
           type: 'bar',
           data: {
             labels,
-            datasets: [{ label: 'Tingkat (%)', data, backgroundColor: colors, borderWidth: 0 }]
+            datasets: [{ label: 'Tingkat (%) — Top 25', data, backgroundColor: colors, borderWidth: 0 }]
           },
           options: {
             indexAxis: 'y',
@@ -403,16 +400,21 @@
         });
       }
 
+      // ===== Trend =====
+      const tLabels = (json.periods ?? []);
+      const tData   = (json.trend   ?? []);
+      const maxTrend = tData.length ? Math.max(...tData) : 0;
+
       const tCanvas = document.getElementById('trendChart');
       if (tCanvas) {
         const tctx = tCanvas.getContext('2d');
         trendChartInstance = new Chart(tctx, {
           type: 'line',
           data: {
-            labels: json.periods ?? [],
+            labels: tLabels,
             datasets: [{
               label: 'Rata-rata (%)',
-              data: json.trend ?? [],
+              data: tData,
               fill: true,
               pointRadius: 3,
               tension: .10,
@@ -436,7 +438,6 @@
     }
 
     const viewInput = document.getElementById('viewInput');
-    const tabBtns   = document.querySelectorAll('.tab-btn');
     const tabTable  = document.getElementById('tab-table');
     const tabChart  = document.getElementById('tab-chart');
 
@@ -456,10 +457,6 @@
       window.history.replaceState({}, '', url.toString());
     }
 
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
       const initial = @json($currentView ?? 'table');
       setActiveTab(initial);
@@ -474,7 +471,7 @@
     if (f && qInp) qInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') f.submit(); });
   </script>
 
-  {{-- Modal scripts untuk Table & Chart (punyamu) --}}
+  {{-- Modal scripts untuk Table & Chart (tetap) --}}
   <script>
       // TABLE modal
       const openModalBtnTable = document.getElementById('openModalBtnTable');

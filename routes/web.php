@@ -8,7 +8,7 @@ use App\Http\Controllers\HotspotController;
 use App\Http\Controllers\WilayahController;
 use App\Http\Controllers\StuntingController;
 use App\Http\Controllers\HomeController;
-
+use App\Http\Controllers\StuntingChartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,9 +19,14 @@ use App\Http\Controllers\HomeController;
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Stunting (publik hanya index + chart JSON)
+// Stunting (publik hanya index + endpoint chart JSON)
 Route::resource('stunting', StuntingController::class)->only(['index']);
+
+// TAB CHART (punya ranking + trend tertimbang) — dipakai di stunting/index.blade.php
 Route::get('/stunting/chart-data', [StuntingController::class, 'chartData'])->name('stunting.chart');
+
+// MINI TREND (12 bulan) untuk Home — dipakai di home/index.blade.php
+Route::get('/stunting/trend', [StuntingChartController::class, 'trend'])->name('stunting.trend');
 
 // Wilayah (daftar publik)
 Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah.index');
@@ -33,14 +38,9 @@ Route::get('/hotspot/data', [HotspotController::class, 'data'])->name('hotspot.d
 // Peta Faskes (publik)
 Route::get('/peta', [PetaController::class, 'index'])->name('peta');
 
-// Laporan (publik atau bisa dipindah ke auth bila perlu)
-// Route::get('/laporan', [DataController::class, 'laporan'])->name('laporan');
-
 Route::get('/laporan', function () {
     return view('laporan.index');
 })->name('laporan');
-
-// --- Laporan (Ringkasan + Ekspor) ---
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +55,6 @@ Route::middleware('guest')->group(function () {
         ->name('login.store');
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Rute yang Memerlukan Login
@@ -67,11 +66,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('stunting', StuntingController::class)->except(['index', 'show']);
 
     // Wilayah: edit & update profil (Faskes Terdekat + Pasien Dilayani)
-    // {desa} berupa string nama desa (tanpa slash) — cukup aman tanpa where()
     Route::get('/wilayah/{desa}/edit', [WilayahController::class, 'edit'])->name('wilayah.edit');
     Route::put('/wilayah/{desa}',      [WilayahController::class, 'update'])->name('wilayah.update');
 
-    // (Opsional) Backward compat: jika form lama masih pakai POST /wilayah/profile
+    // (Opsional) Backward compat jika form lama pakai POST /wilayah/profile
     Route::post('/wilayah/profile', [WilayahController::class, 'upsert'])->name('wilayah.upsert');
 
     // Logout

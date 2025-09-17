@@ -8,6 +8,7 @@ use App\Models\Puskesmas;
 use App\Models\DesaProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Support\StuntingStats;
 
 class WilayahController extends Controller
 {
@@ -108,10 +109,8 @@ class WilayahController extends Controller
 
             $rows = $base->get();
 
-            // ===== Rata-rata stunting (tertimbang): Σkasus / Σpopulasi × 100
-            $sumKas = (int) $rows->sum('kasus');
-            $sumPop = (int) $rows->sum('populasi');
-            $avgRatePage = $sumPop > 0 ? round(($sumKas / $sumPop) * 100, 1) : 0.0;
+            // ===== Rata-rata stunting (rata-rata sederhana per-desa, sama seperti Home)
+            $avgRatePage = StuntingStats::simpleAverageRate($rows);
 
             // Update terakhir (berdasarkan baris yang ditampilkan)
             $maxPeriodRaw = $rows->max('period');
@@ -185,10 +184,8 @@ class WilayahController extends Controller
         $lastUpdateLabel = $maxPeriodRaw ? Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY") : null;
         $displayPeriodLabel = $lastUpdateLabel;
 
-        // ===== Rata-rata stunting (tertimbang) untuk SET BARIS yang ditampilkan (latest per desa)
-        $sumKas = (int) $rows->sum('kasus');
-        $sumPop = (int) $rows->sum('populasi');
-        $avgRatePage = $sumPop > 0 ? round(($sumKas / $sumPop) * 100, 1) : 0.0;
+        // ===== Rata-rata stunting (rata-rata sederhana per-desa, sama seperti Home)
+        $avgRatePage = StuntingStats::simpleAverageRate($rows);
 
         $puskesmas = Puskesmas::orderBy('nama')->get(['id','nama']);
         $desa = $desaInput ?: null;

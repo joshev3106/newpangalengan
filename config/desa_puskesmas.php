@@ -5,6 +5,7 @@ $PEMBANTU_1 = 'Puskesmas Pangalengan';
 $PEMBANTU_2 = 'Puskesmas Banjarsari';
 $PEMBANTU_3 = 'Puskesmas Sukaluyu';
 $PEMBANTU_4 = 'Puskesmas Lamajang';
+$PEMBANTU_5 = 'Puskesmas Banjarsari';
 
 
 return [
@@ -19,7 +20,7 @@ return [
     'Pulosari'       => $PEMBANTU_2,
     'Sukaluyu'       => $PEMBANTU_3,
     'Sukamanah'      => $INDUK,
-    'Tribaktimulya'  => $INDUK,
+    'Tribaktimulya'  => $PEMBANTU_4,
     'Wanasuka'       => $INDUK,
     'Warnasari'      => $INDUK,
     
@@ -34,7 +35,7 @@ return [
         'Pulosari'       => $PEMBANTU_2,
         'Sukaluyu'       => $PEMBANTU_3,
         'Sukamanah'      => $INDUK,
-        'Tribaktimulya'  => $INDUK,
+        'Tribaktimulya'  => $PEMBANTU_4,
         'Wanasuka'       => $INDUK,
         'Warnasari'      => $INDUK,
     ],
@@ -73,6 +74,13 @@ return [
             'lat' => -7.177820379945676, 
             'lng' => 107.57301437324157,
             'tipe' => 'Pembantu 4',
+            'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
+        ],
+
+        'Puskesmas Banjarsari' => [
+            'lat' => -7.177520379945676, 
+            'lng' => 107.57301437324157,
+            'tipe' => 'Pembantu 5',
             'address' => 'No Jl. Raya Pangalengan No.1, Pangalengan, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378',
         ],
     ],

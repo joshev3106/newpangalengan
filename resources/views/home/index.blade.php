@@ -331,7 +331,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script>
-      // ---- Trend 12 bulan
+      // ---- Trend 12 bulan (ambil dari endpoint yang pakai helper yang sama)
       (function(){
         const el = document.getElementById('trendMini'); 
         if (!el) return;

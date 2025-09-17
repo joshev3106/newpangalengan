@@ -19,25 +19,23 @@ class StuntingController extends Controller
         $sev     = $req->input('severity'); // high|medium|low|''
         $periodM = $req->input('period');   // 'YYYY-MM' atau null
         $perPage = (int) $req->input('per_page', 20);
-    
-        // === NEW: sorting params ===
+
+        // sorting params
         $sort = $req->input('sort', 'desa');             // desa|kasus|populasi|rate
         $dir  = strtolower($req->input('dir', 'asc'));   // asc|desc
         $dir  = in_array($dir, ['asc','desc'], true) ? $dir : 'asc';
-    
+
         // amankan kolom sort
         $allowedSorts = ['desa','kasus','populasi','rate'];
-        if (!in_array($sort, $allowedSorts, true)) {
-            $sort = 'desa';
-        }
-    
+        if (!in_array($sort, $allowedSorts, true)) $sort = 'desa';
+
         $rateExpr = "(CASE WHEN stuntings.populasi = 0 THEN 0 ELSE (stuntings.kasus * 100.0) / stuntings.populasi END)";
         $base = Stunting::query()->select('stuntings.*');
-    
+
         // filter periode
         if ($periodM) {
             try {
-                $periodDate = \Illuminate\Support\Carbon::parse($periodM.'-01')->startOfMonth()->format('Y-m-d');
+                $periodDate = Carbon::parse($periodM.'-01')->startOfMonth()->format('Y-m-d');
             } catch (\Throwable $e) {
                 $periodDate = null;
             }
@@ -45,21 +43,22 @@ class StuntingController extends Controller
                 $base->whereDate('stuntings.period', '=', $periodDate);
             }
         } else {
-            $latestSub = \Illuminate\Support\Facades\DB::table('stuntings')
-                ->select('desa', \Illuminate\Support\Facades\DB::raw('MAX(period) as max_period'))
+            // latest per desa
+            $latestSub = DB::table('stuntings')
+                ->select('desa', DB::raw('MAX(period) as max_period'))
                 ->groupBy('desa');
-        
+
             $base->joinSub($latestSub, 'm', function ($join) {
                 $join->on('stuntings.desa', '=', 'm.desa')
                      ->on('stuntings.period', '=', 'm.max_period');
             });
         }
-    
+
         // filter q
         if ($q !== '') {
             $base->where('stuntings.desa', 'LIKE', '%'.$q.'%');
         }
-    
+
         // filter severity
         if ($sev === 'high') {
             $base->whereRaw("$rateExpr > 20");
@@ -68,51 +67,38 @@ class StuntingController extends Controller
         } elseif ($sev === 'low') {
             $base->whereRaw("$rateExpr < 10");
         }
-    
-        // === NEW: apply sort ===
+
+        // apply sort
         if ($sort === 'rate') {
-            $base->orderByRaw("$rateExpr $dir");
-            // biar stabil kalau rate sama
-            $base->orderBy('stuntings.desa', 'asc');
+            $base->orderByRaw("$rateExpr $dir")->orderBy('stuntings.desa', 'asc');
         } else {
-            $base->orderBy("stuntings.$sort", $dir)
-                 ->orderBy('stuntings.desa', 'asc'); // tie-breaker
+            $base->orderBy("stuntings.$sort", $dir)->orderBy('stuntings.desa', 'asc');
         }
-    
+
         $rows = $base->paginate($perPage)->withQueryString();
-    
+
         // label periode
-        $periodLabel = $periodM
-            ? \Illuminate\Support\Carbon::createFromFormat('Y-m', $periodM)->isoFormat("MMM 'YY")
-            : null;
-    
+        $periodLabel = $periodM ? Carbon::createFromFormat('Y-m', $periodM)->isoFormat("MMM 'YY") : null;
+
         $maxPeriodRaw = Stunting::max('period');
-        $displayPeriodLabel = $maxPeriodRaw
-            ? \Illuminate\Support\Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY")
-            : null;
-    
+        $displayPeriodLabel = $maxPeriodRaw ? Carbon::parse($maxPeriodRaw)->isoFormat("MMM 'YY") : null;
+
         return view('stunting.index', [
-            'rows'                => $rows,
-            'q'                   => $q,
-            'sev'                 => $sev,
-            'period'              => $periodM,
-            'periodLabel'         => $periodLabel,
-            'displayPeriodLabel'  => $displayPeriodLabel,
-        
-            // === NEW: kirim ke view untuk indikator panah
-            'sort'                => $sort,
-            'dir'                 => $dir,
+            'rows'               => $rows,
+            'q'                  => $q,
+            'sev'                => $sev,
+            'period'             => $periodM,
+            'periodLabel'        => $periodLabel,
+            'displayPeriodLabel' => $displayPeriodLabel,
+            'sort'               => $sort,
+            'dir'                => $dir,
         ]);
     }
 
-
     public function create() {
-        $defaultPeriod = now()->subMonth()->startOfMonth()->format('Y-m'); // YYYY-MM
-    
-        // Ambil dari config koordinat (master list desa)
+        $defaultPeriod = now()->subMonth()->startOfMonth()->format('Y-m');
         $desaOptions = array_keys(config('desa_coords', []));
-        sort($desaOptions); // urut A-Z
-    
+        sort($desaOptions);
         return view('stunting.create', compact('defaultPeriod', 'desaOptions'));
     }
 
@@ -126,7 +112,6 @@ class StuntingController extends Controller
         $desaOptions = array_keys(config('desa_coords', []));
         sort($desaOptions);
         $lockDesa = true;
-
         return view('stunting.edit', compact('stunting', 'desaOptions'));
     }
 
@@ -135,7 +120,7 @@ class StuntingController extends Controller
         $data = $request->validated();
         $newPeriod = Carbon::parse($data['period'])->startOfMonth();
 
-        // Jika period berubah → buat BARU (append), data lama dibiarkan (riwayat otomatis)
+        // period berubah → buat baris baru
         if ($newPeriod->ne($stunting->period)) {
             Stunting::create([
                 'desa'     => $data['desa'],
@@ -147,7 +132,7 @@ class StuntingController extends Controller
                 ->with('ok','Periode berubah → data bulan baru dibuat. Data lama tetap disimpan.');
         }
 
-        // Period sama → update baris ini
+        // period sama → update baris ini
         $stunting->update($data);
         return redirect()->route('stunting.index')->with('ok','Data diperbarui.');
     }
@@ -157,50 +142,55 @@ class StuntingController extends Controller
         return back()->with('ok','Data dihapus.');
     }
 
+    /**
+     * Endpoint data Chart untuk tab "Chart" di Stunting:
+     * - ranking per-desa (periode terpilih)
+     * - trend 12 bulan (rata-rata tertimbang: Σkasus/Σpopulasi×100)
+     */
     public function chartData(Request $request)
     {
-        // Ambil periode (YYYY-MM) atau pakai periode global terakhir
+        // anchor periode
         $periodStr = $request->string('period')->toString();
         if ($periodStr) {
             $period = Carbon::createFromFormat('Y-m', $periodStr)->startOfMonth();
         } else {
-            $max = Stunting::max('period');               // contoh: '2025-09-01'
-            $period = $max ? Carbon::parse($max) : now()->startOfMonth();
+            $max = Stunting::max('period');
+            $period = $max ? Carbon::parse($max)->startOfMonth() : now()->startOfMonth();
         }
 
-        // --- RANKING (horizontal bar) untuk periode terpilih ---
+        // RANKING periode terpilih
         $rankingRows = Stunting::query()
             ->whereDate('period', $period->toDateString())
             ->select(['desa','kasus','populasi'])
             ->get();
 
-        // Hitung rate per desa dan urutkan desc
         $ranking = $rankingRows->map(function($r){
-                $rate = $r->populasi > 0 ? round($r->kasus / $r->populasi * 100, 1) : 0;
+                $rate = $r->populasi > 0 ? round(($r->kasus / $r->populasi) * 100, 1) : 0.0;
                 return ['desa'=>$r->desa, 'rate'=>$rate];
             })
             ->sortByDesc('rate')
+            ->take(25) // Top 25 supaya ringan (boleh ubah)
             ->values();
 
-        // --- TREND (line) 12 bulan ke belakang (agregat seluruh desa) ---
+        // TREND 12 bulan (tertimbang)
         $trendRows = Stunting::query()
             ->whereDate('period', '<=', $period->toDateString())
             ->selectRaw("DATE_FORMAT(period, '%Y-%m') as ym, SUM(kasus) as kasus, SUM(populasi) as pop")
             ->groupBy('ym')
             ->orderBy('ym', 'desc')
-            ->limit(12)                      // ambil 12 bulan terakhir
+            ->limit(12)
             ->get()
-            ->reverse()                      // urut naik (lama -> baru)
+            ->reverse()
             ->values();
 
-        $periods = $trendRows->pluck('ym');  // ['2024-10','2024-11',...]
-        $trend   = $trendRows->map(fn($r) => $r->pop > 0 ? round($r->kasus / $r->pop * 100, 1) : 0);
+        $periods = $trendRows->pluck('ym');  // ['2024-09',...]
+        $trend   = $trendRows->map(fn($r) => $r->pop > 0 ? round(($r->kasus / $r->pop) * 100, 1) : 0.0);
 
         return response()->json([
             'period'  => $period->format('Y-m'),
-            'ranking' => $ranking,                 // [{desa:'Pangalengan', rate:12.7}, ...]
-            'periods' => $periods,                 // untuk sumbu-X line chart
-            'trend'   => $trend,                   // [12.1, 11.7, ...]
+            'ranking' => $ranking,
+            'periods' => $periods,
+            'trend'   => $trend,
         ]);
     }
 }
