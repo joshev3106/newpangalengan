@@ -38,7 +38,7 @@ Route::get('/peta', [PetaController::class, 'index'])->name('peta');
 
 Route::get('/laporan', function () {
     return view('laporan.index');
-});
+})->name('laporan');
 
 // --- Laporan (Ringkasan + Ekspor) ---
 

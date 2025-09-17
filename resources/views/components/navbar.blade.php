@@ -123,7 +123,7 @@
           </x-nav-link>
 
           {{-- sabar --}}
-          {{-- <x-nav-link :href="route('laporan')" :active="request()->routeIs('laporan')"
+          <x-nav-link :href="route('laporan')" :active="request()->routeIs('laporan')"
                       class="group relative block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-red-600"
                       @click="open=false">
             <span class="flex items-center gap-3">
@@ -133,7 +133,7 @@
               </svg>
               <span>Laporan</span>
             </span>
-          </x-nav-link> --}}
+          </x-nav-link>
 
           @auth
             <form method="POST" action="{{ route('logout') }}">
@@ -218,7 +218,7 @@
         </x-nav-link>
 
         {{-- sabar --}}
-        {{-- <x-nav-link :href="route('laporan')" :active="request()->routeIs('laporan')"
+        <x-nav-link :href="route('laporan')" :active="request()->routeIs('laporan')"
                     class="group relative whitespace-nowrap rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium shadow-sm">
           <span class="flex items-center gap-1 sm:gap-2">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +227,7 @@
             </svg>
             <span>Laporan</span>
           </span>
-        </x-nav-link> --}}
+        </x-nav-link>
 
         @auth
           <form method="POST" action="{{ route('logout') }}">

@@ -1,17 +1,26 @@
 import './bootstrap';
 
 const toTopBtn = document.getElementById("toTopBtn");
+let scrollTimer;
 
-// Tampilkan tombol saat discroll 200px ke bawah
-window.onscroll = function () {
-  if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-    toTopBtn.classList.remove("hidden");
-  } else {
-    toTopBtn.classList.add("hidden");
-  }
-};
+// Pantau saat user scroll
+window.addEventListener("scroll", () => {
+  // Selama masih scroll → sembunyikan tombol
+  toTopBtn.classList.add("hidden");
 
-// Aksi scroll ke atas saat tombol diklik
+  // Reset timer tiap kali ada gerakan scroll
+  clearTimeout(scrollTimer);
+
+  // Setelah berhenti scroll 300ms → munculkan tombol
+  scrollTimer = setTimeout(() => {
+    // Cek posisi, misal hanya muncul kalau sudah >100px dari atas
+    if (document.documentElement.scrollTop > 100 || document.body.scrollTop > 100) {
+      toTopBtn.classList.remove("hidden");
+    }
+  }, 300);
+});
+
+// Klik tombol → scroll halus ke atas
 toTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
