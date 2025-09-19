@@ -9,6 +9,7 @@ use App\Http\Controllers\WilayahController;
 use App\Http\Controllers\StuntingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\StuntingChartController;
+use App\Http\Controllers\LaporanController; // ⬅️ TAMBAHKAN INI
 
 /*
 |--------------------------------------------------------------------------
@@ -36,11 +37,42 @@ Route::get('/hotspot', [HotspotController::class, 'index'])->name('hotspot.index
 Route::get('/hotspot/data', [HotspotController::class, 'data'])->name('hotspot.data');
 
 // Peta Faskes (publik)
-Route::get('/peta', [PetaController::class, 'index'])->name('peta');
+Route::get('/peta', [PetaController::class, 'index'])->name('peta.index');
 
-Route::get('/laporan', function () {
-    return view('laporan.index');
-})->name('laporan');
+/*
+|--------------------------------------------------------------------------
+| Laporan (baru)
+|-------------------------------------------------------------------------- 
+| Halaman laporan + export + jadwal + arsip + bookmark.
+| Semua nama rutenya diawali 'laporan.' agar konsisten di Blade:
+|   - laporan.index
+|   - laporan.export
+|   - laporan.schedule
+|   - laporan.template
+|   - laporan.branding
+|   - laporan.bookmark
+|   - laporan.show
+|   - laporan.apply-bookmark
+*/
+Route::prefix('laporan')->name('laporan.')->group(function () {
+    // Halaman utama laporan
+    Route::get('/', [LaporanController::class, 'index'])->name('index');
+
+    // Export (placeholder: CSV). Nanti bisa diganti PDF/XLSX/PPTX.
+    Route::post('/export', [LaporanController::class, 'export'])->name('export');
+
+    // Penjadwalan (placeholder - simpan di session)
+    Route::post('/schedule', [LaporanController::class, 'schedule'])->name('schedule');
+
+    // Template & Branding (placeholder page)
+    Route::get('/template', [LaporanController::class, 'template'])->name('template');
+    Route::get('/branding', [LaporanController::class, 'branding'])->name('branding');
+
+    // Bookmark & Arsip (placeholder via session)
+    Route::post('/bookmark', [LaporanController::class, 'bookmark'])->name('bookmark');
+    Route::get('/arsip/{id}', [LaporanController::class, 'show'])->name('show');
+    Route::get('/bookmark/{id}', [LaporanController::class, 'applyBookmark'])->name('apply-bookmark');
+});
 
 /*
 |--------------------------------------------------------------------------

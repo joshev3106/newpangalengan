@@ -31,7 +31,7 @@
     @vite('resources/css/app.css')
 </head>
 <body>
-    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit', 'home', 'wilayah.edit'))
+    @if(!request()->routeIs('login', 'stunting.create', 'stunting.edit', 'home', 'wilayah.edit', 'laporan.index'))
         <x-navbar></x-navbar>
     @endif
 
